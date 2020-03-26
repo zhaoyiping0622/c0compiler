@@ -133,12 +133,12 @@ TEST_F(ConfigTest, output) {
 	const char *filename2 = tmpfiles[1].c_str();
 	const char *argv[] = {"compiler", filename1, "-o", filename2};
 	testing::internal::CaptureStderr();
-	Config config(4,argv);
+	Config config(4, argv);
 	config.output();
-	std::string output=testing::internal::GetCapturedStderr();
+	std::string output = testing::internal::GetCapturedStderr();
 	ASSERT_EQ(output,
-			"inputFileName "+config.inputFileName+"\n"+
-					"outputFileName "+config.outputFileName+"\n"+
-					"debug "+std::to_string(config.debug) +"\n"
+						"inputFileName " + config.inputFileName + "\n" +
+								"outputFileName " + config.outputFileName + "\n" +
+								"debug " + std::to_string(config.debug) + "\n"
 	);
 }

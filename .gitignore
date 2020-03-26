@@ -1,3 +1,7 @@
 cmake-build-debug
 .idea
+.vscode
 build
+design/scan/cpp
+design/scan/dot
+design/scan/png

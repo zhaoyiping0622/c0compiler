@@ -10,7 +10,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2019 Pranav Srinivas Kumar <pranav.srinivas.kumar@gmail.com>.
 
 Permission is hereby  granted, free of charge, to any  person obtaining a copy
-of this software and associated  documentation info (the "Software"), to deal
+of this software and associated  documentation resources (the "Software"), to deal
 in the Software  without restriction, including without  limitation the rights
 to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
 copies  of  the Software,  and  to  permit persons  to  whom  the Software  is

@@ -1,0 +1,43 @@
+<addOp> ::= + | -
+<mulOp> ::= * | /
+<cmpOp> ::= < | <= | > | >= | != | ==
+<letter> ::= [_a-zA-Z]
+<non-digit> ::= [1-9]
+<digit> ::= 0 | <non-digit>
+<char> ::= '<addOp>' | '<mulOp>' | '<letter>' | '<digit>' 
+<string> ::= "[\x20\x21\x23-\x7e]"
+<program> ::= <constDeclare>?<valueDeclare>?(<fun>|<noret-fun>)*<main>
+<constDeclare> ::= (const <constDefine>;)+
+<constDefine> ::= int <id> = <integer>(,<id> = <integer>)* | char <id> = <char>(,<id> = <char>)*
+<unsigned> ::= <non-digit><digit>*
+<integer> ::= (+|-)<unsigned>|0
+<id> ::= <letter>(<letter>|<digit>)*
+<declareHead> ::= int <id> | char <id>
+<valueDeclare> ::= (<valueDefine>;)+
+<valueDefine> ::= <type> (<id>|<id>\[<unsigned>\])+
+<constant> ::= <integer> | <char>
+<type> ::= int | char
+<fun> ::= <declareHead>\(<arg>\){<compound-statements>}
+<noret-fun> ::= void <id>\(<arg>\){<compound-statements>}
+<compound-statements> ::= <constDeclare>?<valueDeclare><statements>
+<arg> ::= <args>
+<args> ::= (<type><id>)+|ε
+<main> ::= void main\(\){<compound-statements>}
+<expression> ::= [+|-]<item>(<addOp><item>)*
+<item> ::= <factor>(<mulOp><factor>)
+<factor> ::= <id> | <id>\[<expression>\] | <integer> | <char> | <call-fun> | \(<expression>\)
+<statement> ::= <condition> | <loop> | {<statements>} | <call-fun>; | <call-noret-fun>; | <assign>; | <read>; | <write>; | <ε>; | <switch> | <return>;
+<assign> ::= <id> = <expression> | <id>\[<expression>\]=<expression>
+<condition> ::= if\(<cond>\)<statement>(else <statement>)?
+<cond> ::= <expression><cmpOp><expression>|<expression>
+<loop> ::= while\(<cond>\)<statement>
+<switch> ::= switch\(<expression>\){<cases>}
+<cases> ::= <case>+
+<case> ::= case<constant>:<statement>
+<call-fun> ::= <id>\(<argValue>\)
+<call-noret-fun> ::= <id>\(<argValue>\)
+<argValue> ::= <expression>(,<expression>)* | ε
+<statements> ::= <statement>*
+<read> ::= scanf\(<id>(,<id>)*\)
+<write> ::= printf\(<string>,<expression>\) | printf\(<string>\) | printf\(<expression>\)
+<return> ::= return <expression>
