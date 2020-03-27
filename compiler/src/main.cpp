@@ -5,7 +5,7 @@
 #include "scan.h"
 
 int main(int argc, const char *argv[]) {
-	Config config(argc, argv);
-	Scan scan(config);
-	return 0;
+  Config config(argc, argv);
+  Scan scan(config);
+  return 0;
 }
