@@ -1,0 +1,54 @@
+T <character>
+T <string>
+T <unsigned>
+T <id>
+N <addOp> ::= ADD | MINUS
+N <mulOp> ::= MUL | DIV
+N <cmpOp> ::= LT | LE | GT | GE | NE | EQ
+N <program> ::= <constDeclare> <program1> | <program1>
+N <program1> ::= <valueDeclare> <program2> | <program2>
+N <program2> ::= <noret-fun> <program2> | <fun> <program2> | <main>
+N <constDeclare> ::= const <constDefine>;<constDeclare> | <null>
+N <constDefine> ::= int <id> = <integer> <constDefine1> | char <id> = <character> <constDefine1>
+N <constDefine1> ::= ,<id> = <integer> <constDefine1> | <null>
+N <integer> ::= +<unsigned> | -<unsigned> | <unsigned>
+N <declareHead> ::= int <id> | char <id>
+N <valueDeclare> ::= <valueDefine>;<valueDeclare> | <null>
+N <valueDefine> ::= <type> <id> <valueDefine1> | <type> <id>[<unsigned>] <valueDefine1>
+N <valueDefine1> ::= ,<id><valueDefine1> | ,<id>[<unsigned>]<valueDefine1> | <null>
+N <constant> ::= <integer> | <character>
+N <type> ::= int | char
+N <fun> ::= <declareHead>(<arg>){<compound-statements>}
+N <noret-fun> ::= void <id>(<arg>){<compound-statements>}
+N <compound-statements> ::= <constDeclare><compound-statements1> | <compound-statements1>
+N <compound-statements1> ::= <valueDeclare><statements> | <statements>
+N <arg> ::= <args>
+N <args> ::= <type><id> | <null>
+N <args1> ::= ,<type><id><args1> | <null>
+N <main> ::= void main(){<compound-statements>}
+N <expression> ::= + <expression1> | - <expression1>
+N <expression1> ::= <item><addOp><item> | <item>
+N <item> ::= <factor><mulOp><factor> | <factor>
+N <factor> ::= <id> | <id>[<expression>] | <integer> | <character> | <call-fun> | (<expression>)
+N <statement> ::= <condition> | <loop> | {<statements>} | <call-fun>; | <call-noret-fun>; | <assign>; | <read>; | <write>; | <null>; | <switch> | <return>;
+N <assign> ::= <id> = <expression> | <id>[<expression>]=<expression>
+N <condition> ::= if(<cond>) <statement> | if(<cond>) <statement> else <statement>
+N <cond> ::= <expression><cmpOp><expression> | <expression>
+N <loop> ::= while(<cond>)<statement>
+N <switch> ::= switch(<expression>){<switch1>}
+N <switch1> ::= <cases> <default>
+N <default> ::= default:<statement> | <null>
+N <cases> ::= <case><cases> | <null>
+N <case> ::= case<constant>:<statement>
+N <call-fun> ::= <id>(<argValue>)
+N <call-noret-fun> ::= <id>(<argValue>)
+N <argValue> ::= <expression><argValue1> | <null>
+N <argValue1> ::= ,<expression><argValue1> | <null>
+N <statements> ::= <statement><statements> | <null>
+N <read> ::= scanf(<read1>)
+N <read1> ::= <id><read2>
+N <read2> ::= ,<id> | <null>
+N <write> ::= printf(<write1>)
+N <write1> ::= <string><write2> | <expression><write2>
+N <write2> ::= ,<string><write2> | ,<expression><write2>
+N <return> ::= return <expression>

@@ -1,0 +1,43 @@
+N <addOp> ::= \+ | -
+N <mulOp> ::= \* | /
+N <cmpOp> ::= \< | \<= | \> | \>= | != | ==
+D <letter> ::= [_a-zA-Z]
+D <non-digit> ::= [1-9]
+D <digit> ::= 0 | <non-digit>
+T <character> ::= '<addOp>' | '<mulOp>' | '<letter>' | '<digit>'
+T <string> ::= "[\x20\x21\x23-\x7e]"
+N <program> ::= <constDeclare>?<valueDeclare>?(<fun>|<noret-fun>)*<main>
+N <constDeclare> ::= (const <constDefine>;)+
+N <constDefine> ::= int <id> = <integer>(,<id> = <integer>)* | char <id> = <character>(,<id> = <character>)*
+T <unsigned> ::= <non-digit><digit>*
+N <integer> ::= (\+|-)<unsigned>|0
+T <id> ::= <letter>(<letter>|<digit>)*
+N <declareHead> ::= int <id> | char <id>
+N <valueDeclare> ::= (<valueDefine>;)+
+N <valueDefine> ::= <type> (<id>|<id>\[<unsigned>\])+
+N <constant> ::= <integer> | <character>
+N <type> ::= int | char
+N <fun> ::= <declareHead>\(<arg>\){<compound-statements>}
+N <noret-fun> ::= void <id>\(<arg>\){<compound-statements>}
+N <compound-statements> ::= <constDeclare>?<valueDeclare>?<statements>
+N <arg> ::= <args>
+N <args> ::= <type><id>(,<type><id>)*|null
+N <main> ::= void main\(\){<compound-statements>}
+N <expression> ::= (\+|-)?<item>(<addOp><item>)*
+N <item> ::= <factor>(<mulOp><factor>)
+N <factor> ::= <id> | <id>\[<expression>\] | <integer> | <character> | <call-fun> | \(<expression>\)
+N <statement> ::= <condition> | <loop> | {<statements>} | <call-fun>; | <call-noret-fun>; | <assign>; | <read>; | <write>; | <null>; | <switch> | <return>;
+N <assign> ::= <id> = <expression> | <id>\[<expression>\]=<expression>
+N <condition> ::= if\(<cond>\)<statement>(else <statement>)?
+N <cond> ::= <expression><cmpOp><expression>|<expression>
+N <loop> ::= while\(<cond>\)<statement>
+N <switch> ::= switch\(<expression>\){<cases> (default:<statement>)?}
+N <cases> ::= <case>+
+N <case> ::= case<constant>:<statement>
+N <call-fun> ::= <id>\(<argValue>\)
+N <call-noret-fun> ::= <id>\(<argValue>\)
+N <argValue> ::= <expression>(,<expression>)* | null
+N <statements> ::= <statement>*
+N <read> ::= scanf\(<id>(,<id>)*\)
+N <write> ::= printf\((<string>|<expression>)(,(<string>|<expression>))*\)
+N <return> ::= return <expression>
