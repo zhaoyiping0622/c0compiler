@@ -154,10 +154,12 @@ void Scan::initTable() {
   states[27].tokentype = RBBRACKETS;
   states[28].terminate = true;
   states[28].tokentype = COMMA;
-  states[30].terminate = true;
-  states[30].tokentype = STRING;
-  states[32].terminate = true;
-  states[32].tokentype = UNSIGNED;
+  states[29].terminate = true;
+  states[29].tokentype = COLON;
+  states[31].terminate = true;
+  states[31].tokentype = STRING;
+  states[33].terminate = true;
+  states[33].tokentype = UNSIGNED;
   add(1, 2, '\'');
   add(2, 3, '\\');
   for (int i = 0x20; i <= 0x26; i++)add(2, 4, i);
@@ -194,16 +196,17 @@ void Scan::initTable() {
   add(1, 26, '{');
   add(1, 27, '}');
   add(1, 28, ',');
-  add(1, 29, '"');
-  add(29, 29, 0x20);
-  add(29, 29, 0x21);
-  for (int i = 0x23; i <= 0x5b; i++)add(29, 29, i);
-  for (int i = 0x5d; i <= 0x7e; i++)add(29, 29, i);
-  add(29, 30, '"');
-  add(29, 31, '\\');
-  for (int i = 0x20; i <= 0x7e; i++)add(31, 29, i);
-  for (int i = '0'; i <= '9'; i++)add(1, 32, i);
-  for (int i = '0'; i <= '9'; i++)add(32, 32, i);
+  add(1, 29, ':');
+  add(1, 30, '"');
+  add(30, 30, 0x20);
+  add(30, 30, 0x21);
+  for (int i = 0x23; i <= 0x5b; i++)add(30, 30, i);
+  for (int i = 0x5d; i <= 0x7e; i++)add(30, 30, i);
+  add(30, 31, '"');
+  add(30, 32, '\\');
+  for (int i = 0x20; i <= 0x7e; i++)add(32, 30, i);
+  for (int i = '0'; i <= '9'; i++)add(1, 33, i);
+  for (int i = '0'; i <= '9'; i++)add(33, 33, i);
 #undef add
 }
 void Scan::initSymbolTable() {
@@ -220,6 +223,8 @@ void Scan::initSymbolTable() {
   add(return, RETURN);
   add(main, MAIN);
   add(default, DEFAULT);
+  add(const, CONST);
+  add(else, ELSE);
 #undef add
 }
 Symbol::Symbol() {

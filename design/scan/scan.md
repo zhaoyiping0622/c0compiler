@@ -21,6 +21,8 @@
   + return
   + main
   + default
+  + const
+  + else
 + 不可分解的元素
   + addOp(+-)
   + mulOp(*/)

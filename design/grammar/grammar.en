@@ -10,18 +10,18 @@
 <constDeclare> ::= (const <constDefine>;)+
 <constDefine> ::= int <id> = <integer>(,<id> = <integer>)* | char <id> = <char>(,<id> = <char>)*
 <unsigned> ::= <non-digit><digit>*
-<integer> ::= (+|-)<unsigned>|0
+<integer> ::= (+|-)<unsigned>
 <id> ::= <letter>(<letter>|<digit>)*
 <declareHead> ::= int <id> | char <id>
 <valueDeclare> ::= (<valueDefine>;)+
-<valueDefine> ::= <type> (<id>|<id>\[<unsigned>\])+
+<valueDefine> ::= <type> <id>|<id>\[<unsigned>\](,<id>|<id>\[<unsigned>\])+
 <constant> ::= <integer> | <char>
 <type> ::= int | char
 <fun> ::= <declareHead>\(<arg>\){<compound-statements>}
 <noret-fun> ::= void <id>\(<arg>\){<compound-statements>}
 <compound-statements> ::= <constDeclare>?<valueDeclare><statements>
 <arg> ::= <args>
-<args> ::= (<type><id>)+|ε
+<args> ::= <type><id>(,<type><id>)*|ε
 <main> ::= void main\(\){<compound-statements>}
 <expression> ::= [+|-]<item>(<addOp><item>)*
 <item> ::= <factor>(<mulOp><factor>)
