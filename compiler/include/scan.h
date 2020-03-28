@@ -50,6 +50,8 @@ typedef enum {
   RETURN,
   MAIN,
   DEFAULT,
+  CONST,
+  ELSE,
   EOFTOKEN,
   UNDEFINED
 } Tokentype;

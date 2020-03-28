@@ -48,6 +48,8 @@ class ScanTest : public testing::Test {
     Tokentype2string(RETURN);
     Tokentype2string(MAIN);
     Tokentype2string(DEFAULT);
+    Tokentype2string(CONST);
+    Tokentype2string(ELSE);
     Tokentype2string(EOFTOKEN);
 #undef Tokentype2string
   }

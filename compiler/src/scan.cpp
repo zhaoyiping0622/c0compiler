@@ -220,6 +220,8 @@ void Scan::initSymbolTable() {
   add(return, RETURN);
   add(main, MAIN);
   add(default, DEFAULT);
+  add(const, CONST);
+  add(else, ELSE);
 #undef add
 }
 Symbol::Symbol() {

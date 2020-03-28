@@ -22,3 +22,7 @@ MAIN
 main
 DEFAULT
 default
+CONST
+const
+ELSE
+else

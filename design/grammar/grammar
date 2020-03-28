@@ -10,7 +10,7 @@
 <constDeclare> ::= (const <constDefine>;)+
 <constDefine> ::= int <id> = <integer>(,<id> = <integer>)* | char <id> = <char>(,<id> = <char>)*
 <unsigned> ::= <non-digit><digit>*
-<integer> ::= (+|-)<unsigned>|0
+<integer> ::= (\+|-)<unsigned>|0
 <id> ::= <letter>(<letter>|<digit>)*
 <declareHead> ::= int <id> | char <id>
 <valueDeclare> ::= (<valueDefine>;)+
@@ -23,7 +23,7 @@
 <arg> ::= <args>
 <args> ::= (<type><id>)+|ε
 <main> ::= void main\(\){<compound-statements>}
-<expression> ::= [+|-]<item>(<addOp><item>)*
+<expression> ::= [\+|-]<item>(<addOp><item>)*
 <item> ::= <factor>(<mulOp><factor>)
 <factor> ::= <id> | <id>\[<expression>\] | <integer> | <char> | <call-fun> | \(<expression>\)
 <statement> ::= <condition> | <loop> | {<statements>} | <call-fun>; | <call-noret-fun>; | <assign>; | <read>; | <write>; | <ε>; | <switch> | <return>;
