@@ -10,6 +10,7 @@
 11 LBBRACKETS
 12 RBBRACKETS
 13 COMMA
+14 COLON
 1 2 +
 1 3 -
 1 4 *
@@ -22,3 +23,4 @@
 1 11 {
 1 12 }
 1 13 ,
+1 14 :

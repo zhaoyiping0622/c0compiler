@@ -33,6 +33,7 @@ class ScanTest : public testing::Test {
     Tokentype2string(RMBRACKETS);
     Tokentype2string(ASSIGN);
     Tokentype2string(COMMA);
+    Tokentype2string(COLON);
     Tokentype2string(CHARACTER);
     Tokentype2string(STRING);
     Tokentype2string(UNSIGNED);
@@ -136,10 +137,10 @@ runDeath(FILELOCATION(#file)+(std::string)"Death.in",multi);\
 TEST_F(ScanDeathTest, file) {\
 runDeath(FILELOCATION(#file)+(std::string)"Death.in",multi,(std::string)errorMessage);\
 }
+FILETESTWITHERROR(stringMultiLine, false, ".*\"asdf\\\\n.*");
 FILETEST(not, false);
 FILETEST(char, true);
 FILETEST(string, true);
-FILETESTWITHERROR(stringMultiLine, false, ".*\"asdf\\\\n.*");
 #undef FILETEST
 #undef RESOURCES
 #undef FILELOCATION
