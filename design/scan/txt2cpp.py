@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from os import listdir
+import argparse
 
 
 def getrange(x: str):
@@ -27,7 +27,7 @@ def getrange(x: str):
             return None
 
 
-def run(file, filename):
+def run(file, output):
     codes = []
     with open(file) as f:
         s = f.readlines()
@@ -48,10 +48,15 @@ def run(file, filename):
                         f"for(int i={c[0]};i<={c[1]};i++)add({f},{t},i);")
                 else:
                     print(line[i])
-    with open("cpp/" + filename + ".cpp", "w")as f:
+    with open(output, "w")as f:
         f.write("\n".join(codes))
 
 
-for file in listdir("txt"):
-    if file[-2:] != "py":
-        run("txt/" + file, file)
+program = argparse.ArgumentParser()
+program.add_argument("filename")
+program.add_argument("-o", "--output", help="output")
+program = program.parse_args()
+
+file = program.filename
+output = program.output
+run(file, output)

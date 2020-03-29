@@ -102,111 +102,117 @@ int State::getNext(char c) {
   return next[c];
 }
 State::State() : terminate(false), tokentype(UNDEFINED) {}
-Token::Token() {
-
-}
-Token::Token(Tokentype tokentype, std::string s) : tokentype(tokentype), s(s) {
-
-}
+Token::Token() {}
+Token::Token(Tokentype tokentype, std::string s) : tokentype(tokentype), s(s) {}
 void Scan::initTable() {
 #define add(from, to, character) states[from].setNext(character,to)
-  states[6].terminate = true;
-  states[6].tokentype = CHARACTER;
-  states[7].terminate = true;
-  states[7].tokentype = LT;
-  states[8].terminate = true;
-  states[8].tokentype = GT;
-  states[10].terminate = true;
-  states[10].tokentype = ASSIGN;
-  states[11].terminate = true;
-  states[11].tokentype = LE;
+  states[2].terminate = true;
+  states[2].tokentype = AND;
+  states[3].terminate = true;
+  states[3].tokentype = OR;
+  states[4].terminate = true;
+  states[4].tokentype = NE;
+  states[5].terminate = true;
+  states[5].tokentype = NOT;
   states[12].terminate = true;
-  states[12].tokentype = GE;
+  states[12].tokentype = CHARACTER;
   states[13].terminate = true;
-  states[13].tokentype = NE;
+  states[13].tokentype = LT;
   states[14].terminate = true;
-  states[14].tokentype = EQ;
+  states[14].tokentype = GT;
   states[15].terminate = true;
-  states[15].tokentype = EOFTOKEN;
+  states[15].tokentype = EQ;
   states[16].terminate = true;
-  states[16].tokentype = ID;
+  states[16].tokentype = ASSIGN;
   states[17].terminate = true;
-  states[17].tokentype = ADD;
+  states[17].tokentype = LE;
   states[18].terminate = true;
-  states[18].tokentype = MINUS;
+  states[18].tokentype = GE;
   states[19].terminate = true;
-  states[19].tokentype = MUL;
+  states[19].tokentype = EOFTOKEN;
   states[20].terminate = true;
-  states[20].tokentype = DIV;
+  states[20].tokentype = ID;
   states[21].terminate = true;
-  states[21].tokentype = SEMICOLON;
+  states[21].tokentype = ADD;
   states[22].terminate = true;
-  states[22].tokentype = LSBRACKETS;
+  states[22].tokentype = MINUS;
   states[23].terminate = true;
-  states[23].tokentype = RSBRACKETS;
+  states[23].tokentype = MUL;
   states[24].terminate = true;
-  states[24].tokentype = LMBRACKETS;
+  states[24].tokentype = DIV;
   states[25].terminate = true;
-  states[25].tokentype = RMBRACKETS;
+  states[25].tokentype = SEMICOLON;
   states[26].terminate = true;
-  states[26].tokentype = LBBRACKETS;
+  states[26].tokentype = LSBRACKETS;
   states[27].terminate = true;
-  states[27].tokentype = RBBRACKETS;
+  states[27].tokentype = RSBRACKETS;
   states[28].terminate = true;
-  states[28].tokentype = COMMA;
+  states[28].tokentype = LMBRACKETS;
   states[29].terminate = true;
-  states[29].tokentype = COLON;
+  states[29].tokentype = RMBRACKETS;
+  states[30].terminate = true;
+  states[30].tokentype = LBBRACKETS;
   states[31].terminate = true;
-  states[31].tokentype = STRING;
+  states[31].tokentype = RBBRACKETS;
+  states[32].terminate = true;
+  states[32].tokentype = COMMA;
   states[33].terminate = true;
-  states[33].tokentype = UNSIGNED;
-  add(1, 2, '\'');
-  add(2, 3, '\\');
-  for (int i = 0x20; i <= 0x26; i++)add(2, 4, i);
-  for (int i = 0x28; i <= 0x5b; i++)add(2, 4, i);
-  for (int i = 0x5d; i <= 0x7e; i++)add(2, 4, i);
-  for (int i = 0x20; i <= 0x7e; i++)add(3, 5, i);
-  add(5, 6, '\'');
-  add(4, 6, '\'');
-  add(1, 7, '<');
-  add(1, 8, '>');
-  add(1, 9, '!');
-  add(1, 10, '=');
-  add(7, 11, '=');
-  add(8, 12, '=');
-  add(9, 13, '=');
-  add(10, 14, '=');
-  add(1, 15, EOF);
-  add(1, 16, '_');
-  for (int i = 'a'; i <= 'z'; i++)add(1, 16, i);
-  for (int i = 'A'; i <= 'Z'; i++)add(1, 16, i);
-  add(16, 16, '_');
-  for (int i = 'a'; i <= 'z'; i++)add(16, 16, i);
-  for (int i = 'A'; i <= 'Z'; i++)add(16, 16, i);
-  for (int i = '0'; i <= '9'; i++)add(16, 16, i);
-  add(1, 17, '+');
-  add(1, 18, '-');
-  add(1, 19, '*');
-  add(1, 20, '/');
-  add(1, 21, ';');
-  add(1, 22, '(');
-  add(1, 23, ')');
-  add(1, 24, '[');
-  add(1, 25, ']');
-  add(1, 26, '{');
-  add(1, 27, '}');
-  add(1, 28, ',');
-  add(1, 29, ':');
-  add(1, 30, '"');
-  add(30, 30, 0x20);
-  add(30, 30, 0x21);
-  for (int i = 0x23; i <= 0x5b; i++)add(30, 30, i);
-  for (int i = 0x5d; i <= 0x7e; i++)add(30, 30, i);
-  add(30, 31, '"');
-  add(30, 32, '\\');
-  for (int i = 0x20; i <= 0x7e; i++)add(32, 30, i);
-  for (int i = '0'; i <= '9'; i++)add(1, 33, i);
-  for (int i = '0'; i <= '9'; i++)add(33, 33, i);
+  states[33].tokentype = COLON;
+  states[35].terminate = true;
+  states[35].tokentype = STRING;
+  states[37].terminate = true;
+  states[37].tokentype = UNSIGNED;
+  add(1, 5, '!');
+  add(5, 4, '=');
+  add(1, 6, '&');
+  add(6, 2, '&');
+  add(1, 7, '|');
+  add(7, 3, '|');
+  add(1, 8, '\'');
+  add(8, 9, '\\');
+  for (int i = 0x20; i <= 0x26; i++)add(8, 10, i);
+  for (int i = 0x28; i <= 0x5b; i++)add(8, 10, i);
+  for (int i = 0x5d; i <= 0x7e; i++)add(8, 10, i);
+  for (int i = 0x20; i <= 0x7e; i++)add(9, 11, i);
+  add(11, 12, '\'');
+  add(10, 12, '\'');
+  add(1, 13, '<');
+  add(1, 14, '>');
+  add(1, 16, '=');
+  add(13, 17, '=');
+  add(14, 18, '=');
+  add(16, 15, '=');
+  add(1, 19, EOF);
+  add(1, 20, '_');
+  for (int i = 'a'; i <= 'z'; i++)add(1, 20, i);
+  for (int i = 'A'; i <= 'Z'; i++)add(1, 20, i);
+  add(20, 20, '_');
+  for (int i = 'a'; i <= 'z'; i++)add(20, 20, i);
+  for (int i = 'A'; i <= 'Z'; i++)add(20, 20, i);
+  for (int i = '0'; i <= '9'; i++)add(20, 20, i);
+  add(1, 21, '+');
+  add(1, 22, '-');
+  add(1, 23, '*');
+  add(1, 24, '/');
+  add(1, 25, ';');
+  add(1, 26, '(');
+  add(1, 27, ')');
+  add(1, 28, '[');
+  add(1, 29, ']');
+  add(1, 30, '{');
+  add(1, 31, '}');
+  add(1, 32, ',');
+  add(1, 33, ':');
+  add(1, 34, '"');
+  add(34, 34, 0x20);
+  add(34, 34, 0x21);
+  for (int i = 0x23; i <= 0x5b; i++)add(34, 34, i);
+  for (int i = 0x5d; i <= 0x7e; i++)add(34, 34, i);
+  add(34, 35, '"');
+  add(34, 36, '\\');
+  for (int i = 0x20; i <= 0x7e; i++)add(36, 34, i);
+  for (int i = '0'; i <= '9'; i++)add(1, 37, i);
+  for (int i = '0'; i <= '9'; i++)add(37, 37, i);
 #undef add
 }
 void Scan::initSymbolTable() {
@@ -227,9 +233,5 @@ void Scan::initSymbolTable() {
   add(else, ELSE);
 #undef add
 }
-Symbol::Symbol() {
-
-}
-Symbol::Symbol(Tokentype tokentype) : tokentype(tokentype) {
-
-}
+Symbol::Symbol() {}
+Symbol::Symbol(Tokentype tokentype) : tokentype(tokentype) {}

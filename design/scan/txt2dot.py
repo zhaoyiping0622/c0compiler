@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from os import listdir
+import argparse
 
 
 def tran(s):
@@ -8,12 +8,12 @@ def tran(s):
     return s
 
 
-def run(file, filename):
+def run(file, output):
     with open(file) as f:
         s = f.readlines()
     out = ""
     out += "//@startdot\n"
-    out += f"digraph {filename} {{\n"
+    out += f"digraph {file.split('/')[-1].split('.')[0]} {{\n"
     out += 'rankdir="LR"\n'
     for line in s:
         line = line.split()
@@ -23,10 +23,15 @@ def run(file, filename):
             out += f'{line[0]}->{line[1]}[label="{tran(" ".join([line[i] for i in range(2, len(line))]))}"]\n'
     out += "}\n"
     out += "//@enddot\n"
-    with open(f"dot/{filename}.dot", "w") as f:
+    with open(output, "w") as f:
         f.write(out)
 
 
-for file in listdir("txt"):
-    if file[-2:] != 'py':
-        run("txt/" + file, file)
+program = argparse.ArgumentParser()
+program.add_argument("filename")
+program.add_argument("-o", "--output", help="output")
+program = program.parse_args()
+
+file = program.filename
+output = program.output
+run(file, output)
