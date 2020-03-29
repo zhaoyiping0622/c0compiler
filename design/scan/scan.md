@@ -27,6 +27,7 @@
   + addOp(+-)
   + mulOp(*/)
   + cmpOp(</<=/>/>=/!=/==)
+  + boolOp(!/||/&&)
   + semicolon;
   + sbrackets()
   + bbrackets{}
@@ -54,6 +55,20 @@
   + A-B，A和B可以是字符或以0x开头的ASCII码（不能混搭，因为我第一次写的时候没有混搭，现在懒得改了），表示从A到B的所有字符（闭区间）
   
 通过txt中的文件可生成cpp和dot文件，txt文件夹中有一个`total.py`用来组合所有txt文件。通过dot文件可生成png文件。
+
+### 增加语法支持时需要注意的东西
+
+自动机部分直接拷贝`design/scan/cpp`中内容至`scan.cpp`中`initTable`函数
+
+#### 增加保留字
+
++ `scan.h`中`tokentype`添加保留字
++ `testscan.cpp`中`SetUp`函数中添加保留字
++ 如果是关键字还需要添加`initSymbolTable`函数
+
+#### 增加运算符
+
++ `scan.h`中`tokentype`添加保留字
 
 ### 遇到的问题
 

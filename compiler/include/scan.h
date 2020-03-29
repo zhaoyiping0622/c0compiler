@@ -10,7 +10,7 @@
 #include "config.h"
 
 #define SCANBUFSIZE 2048
-#define STATENUM 34
+#define STATENUM 38
 
 void scanError(std::string errorMessage);
 
@@ -26,6 +26,9 @@ typedef enum {
   GE,
   NE,
   EQ,
+  NOT,
+  AND,
+  OR,
   SEMICOLON,
   LSBRACKETS,
   RSBRACKETS,

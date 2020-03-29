@@ -24,6 +24,9 @@ class ScanTest : public testing::Test {
     Tokentype2string(GE);
     Tokentype2string(NE);
     Tokentype2string(EQ);
+    Tokentype2string(NOT);
+    Tokentype2string(AND);
+    Tokentype2string(OR);
     Tokentype2string(SEMICOLON);
     Tokentype2string(LSBRACKETS);
     Tokentype2string(RSBRACKETS);
@@ -128,6 +131,7 @@ FILETEST(cmpOp);
 FILETEST(char);
 FILETEST(number);
 FILETEST(id);
+FILETEST(bool)
 #undef FILETEST
 #define FILETEST(file, multi)\
 TEST_F(ScanDeathTest, file) {\
@@ -138,7 +142,6 @@ TEST_F(ScanDeathTest, file) {\
 runDeath(FILELOCATION(#file)+(std::string)"Death.in",multi,(std::string)errorMessage);\
 }
 FILETESTWITHERROR(stringMultiLine, false, ".*\"asdf\\\\n.*");
-FILETEST(not, false);
 FILETEST(char, true);
 FILETEST(string, true);
 #undef FILETEST

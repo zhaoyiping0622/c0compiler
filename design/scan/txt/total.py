@@ -33,11 +33,13 @@ def run(file, cnt) -> int:
     return cc
 
 
-remove("total")
+if "total.txt" in listdir('.'):
+    remove("total.txt")
+
 cnt = 0
 for file in listdir('.'):
     if file[-2:] != 'py':
         cnt += run(file, cnt) - 1
-with open("total", "w")as f:
+with open("total.txt", "w")as f:
     f.write("\n".join(totalnodes) + '\n')
     f.write("\n".join(totaledges) + '\n')
