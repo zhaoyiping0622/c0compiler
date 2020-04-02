@@ -2,6 +2,7 @@
 // Created by zhaoyiping on 2020/3/24.
 //
 
+#include <memory>
 #include "scan.h"
 std::string visualize(std::string s) {
   std::string ret;
@@ -26,9 +27,9 @@ std::string visualize(std::string s) {
   }
   return ret;
 }
-void scanError(std::string errorMessage) {
-  std::cerr << "SCAN ERROR: " << errorMessage << std::endl;
-  exit(1);
+void scanError(const char *errorMessage) {
+  std::string es = "SCAN ERROR: " + (std::string)(errorMessage);
+  error(es.c_str());
 }
 Token Scan::getToken() {
   int state = 1;
@@ -53,11 +54,11 @@ Token Scan::getToken() {
     } else {
       s += c;
       s = visualize(s);
-      scanError("\"" + s + "\" is a illegal string");
+      scanError(("\"" + s + "\" is a illegal string").c_str());
     }
   }
 }
-Scan::Scan(Config &config) : input(config.inputFile) {
+Scan::Scan(std::shared_ptr<Config> config) : input(config->inputFile) {
   init();
 }
 Scan::Scan(std::istream &input) : input(input) {
@@ -85,7 +86,6 @@ void Scan::getNewBuf() {
 void Scan::init() {
   getNewBuf();
   pointerLocation = 0;
-  nextChar = 0;
   eof = false;
   initTable();
   initSymbolTable();
@@ -102,8 +102,6 @@ int State::getNext(char c) {
   return next[c];
 }
 State::State() : terminate(false), tokentype(UNDEFINED) {}
-Token::Token() {}
-Token::Token(Tokentype tokentype, std::string s) : tokentype(tokentype), s(s) {}
 void Scan::initTable() {
 #define add(from, to, character) states[from].setNext(character,to)
   states[2].terminate = true;
@@ -233,5 +231,3 @@ void Scan::initSymbolTable() {
   add(else, ELSE);
 #undef add
 }
-Symbol::Symbol() {}
-Symbol::Symbol(Tokentype tokentype) : tokentype(tokentype) {}

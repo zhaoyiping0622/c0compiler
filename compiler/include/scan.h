@@ -7,66 +7,16 @@
 
 #include "string"
 #include "iostream"
+#include "memory"
+#include "base.h"
 #include "config.h"
+#include "symbol.h"
+#include "token.h"
 
 #define SCANBUFSIZE 2048
 #define STATENUM 38
 
-void scanError(std::string errorMessage);
-
-typedef enum {
-  ID = 257,
-  ADD,
-  MINUS,
-  MUL,
-  DIV,
-  LT,
-  LE,
-  GT,
-  GE,
-  NE,
-  EQ,
-  NOT,
-  AND,
-  OR,
-  SEMICOLON,
-  LSBRACKETS,
-  RSBRACKETS,
-  LBBRACKETS,
-  RBBRACKETS,
-  LMBRACKETS,
-  RMBRACKETS,
-  ASSIGN,
-  COMMA,
-  COLON,
-  CHARACTER,
-  STRING,
-  UNSIGNED,
-  INT,
-  CHAR,
-  VOID,
-  IF,
-  WHILE,
-  SWITCH,
-  CASE,
-  SCANF,
-  PRINTF,
-  RETURN,
-  MAIN,
-  DEFAULT,
-  CONST,
-  ELSE,
-  EOFTOKEN,
-  UNDEFINED
-} Tokentype;
-
-class Token {
- public:
-  Tokentype tokentype;
-  std::string s;
-  Token();
-  Token(Tokentype tokentype, std::string s);
-};
+void scanError(const char *errorMessage);
 
 class State {
  public:
@@ -78,26 +28,16 @@ class State {
  private:
   std::unordered_map<char, int> next;
 };
-
-class Symbol {
- public:
-  Tokentype tokentype;
-  Symbol(Tokentype tokentype);
-  Symbol();
-};
-
-class Scan {
+class Scan : public Tokenizer {
  public:
   Token getToken();
-  Scan(Config &config);
+  Scan(std::shared_ptr<Config> config);
   Scan(std::istream &input);
  private:
   bool eof;
   std::istream &input;
   char buf[SCANBUFSIZE];
   State states[STATENUM];
-  std::unordered_map<std::string, Symbol> symbolTable;
-  char nextChar;
   int pointerLocation;
   int bufSize;
   void init();
