@@ -12,59 +12,73 @@
 #include "token.h"
 #include "unordered_map"
 #include "vector"
+#include "cstdarg"
 
 void parseError(const char *errorMessage);
 
+#define readFunName(name) read##name
 class Parse {
  public:
   Parse(std::shared_ptr<Tokenizer> tokenlizer);
- private:
+ protected:
+  std::shared_ptr<AST> getTail(std::shared_ptr<AST> now);
   std::shared_ptr<Tokenizer> tokenlizer;
   std::shared_ptr<AST> root;
   void init();
   void parse();
+  Token getToken();
+  Token popToken();
+  Token nextToken;
+  Token match(Tokentype);
+  std::shared_ptr<ASTLeaf> readAddOp(); // DONE
+  std::shared_ptr<ASTLeaf> readMulOp(); // DONE
+  std::shared_ptr<ASTLeaf> readCmpOp(); // DONE
+  std::shared_ptr<AST> readProgram(); // DONE
+  std::shared_ptr<ASTDeclareFun> readFunOrMain(); // DONE
+  std::shared_ptr<ASTDeclareValue> readConstDeclare(); // DONE
+  std::shared_ptr<ASTDeclareValue> readConstDefine(); // DONE
+  std::string readInteger(); // DONE
+  std::pair<Tokentype, std::string> readDeclareHead(); // DONE
+  std::shared_ptr<ASTDeclare> readValueDefine(std::pair<Tokentype, std::string>); // DONE
+  std::shared_ptr<ASTLeaf> readConstant(); // DONE
+  Tokentype readType(); // DONE
+  std::shared_ptr<ASTDeclareFun> readFun(); // DONE
+  std::shared_ptr<AST> readCompound_statements(); // DONE
+  std::shared_ptr<ASTDeclare> readInFuncValueDeclare(); // DONE
+  std::vector<std::pair<Tokentype, std::string>> readArg(); // DONE
+  std::shared_ptr<ASTDeclareFun> readMain(); // DONE
+  std::shared_ptr<ASTStatement> readExpression(); // DONE
+  std::shared_ptr<ASTStatement> readItem(); // DONE
+  std::shared_ptr<AST> readFactor(); // DONE
+  std::shared_ptr<AST> readFactor1(); // DONE
+  std::shared_ptr<AST> readStatement(); // DONE
+  std::shared_ptr<AST> readAssign(std::string); // DONE
+  std::shared_ptr<ASTCondition> readCondition(); // DONE
+  std::shared_ptr<AST> readElse(); // DONE
+  std::shared_ptr<ASTStatement> readBoolean(); // DONE
+  std::shared_ptr<ASTStatement> readOr(); // DONE
+  std::shared_ptr<ASTStatement> readAnd(); // DONE
+  std::shared_ptr<ASTStatement> readNot(); // DONE
+  std::shared_ptr<ASTStatement> readCond(); // DONE
+  std::shared_ptr<AST> readLoop(); // DONE
+  std::shared_ptr<AST> readSwitch(); // DONE
+  std::shared_ptr<AST> readSwitch1(); // DONE
+  std::shared_ptr<AST> readDefault(); // DONE
+  std::shared_ptr<AST> readCases(); // DONE
+  std::shared_ptr<AST> readCase(); // DONE
+  std::shared_ptr<ASTCall> readCall_fun(std::string id = ""); // DONE
+  std::shared_ptr<AST> readArgValue(); // DONE
+  std::shared_ptr<AST> readStatements(); // DONE
+  std::shared_ptr<ASTRead> readRead();
+  std::shared_ptr<ASTWrite> readWrite();
+  std::shared_ptr<AST> readWrite2();
+  std::shared_ptr<ASTRet> readReturn();
+  std::string readCharacter();
+  std::string readId();
+  std::string readUnsigned();
+  std::string readString();
+  void parseErrorUnexpectedToken(int num, ...);
+  void parseErrorUnexpectedToken(const char *);
 };
-
-#define ParseStateName(name) ParseState##name
-#define ParseStateClassForwardDeclare(name) class ParseStateName(name);
-#define ParseStateVectorType std::vector<std::shared_ptr<ParseState>>
-#define ParseStateFunctionType std::function<std::shared_ptr<AST>(const std::vector<std::shared_ptr<AST>> &)>
-#define RULETYPE std::unordered_map<Tokentype, std::pair<ParseStateVectorType,ParseStateFunctionType>>
-#define MakeParseStateVectorElement(name) std::make_shared<ParseStateName(name)>()
-#define STATICDECLARE(name) RULETYPE ParseStateName(name)::rules;bool ParseStateName(name)::inited=false;
-#define NULLStatement UNDEFINED
-class ParseState {
- public:
-  static std::shared_ptr<Tokenizer> tokenlizer;
-  std::pair<ParseStateVectorType, ParseStateFunctionType > getNext();
- protected:
-  static Token popToken();
-  static Token getToken();
-  static Token nextToken;
-  std::shared_ptr<RULETYPE> rules;
-};
-#define ParseStateClass(name) \
-class ParseStateName(name):public ParseState{\
- public:\
-  static RULETYPE baseRules;\
-  static bool inited;\
-  void addRuleVector(Tokentype tokentype,ParseStateVectorType&&v){ rules[tokentype].first=v; }\
-  void addRuleFunction(Tokentype tokentype,ParseStateFunctionType&&f){rules[tokentype].second=f;}\
-  ParseStateName(name)();\
-};
-
-#define ParseStateClassInit(name, ...)\
-ParseStateName(name)::ParseStateName(name)(){\
-  if(!inited){\
-    inited=true;\
-    __VA_ARGS__;\
-  }\
-  rules=std::make_shared(baseRules);\
-}
-
-#define ParseStateClassAddVector(tokentype, ...) addRuleVector(tokentype, ParseStateVectorType({__VA_ARGS__}))
-#define ParseStateFunctionLambda [](const std::vector<std::shared_ptr<AST>>&)->std::shared_ptr<AST>
-#define ParseStateClassAddFunction(tokentype, ...) addRuleFunction(tokentype, ParseStateFunctionLambda{__VA_ARGS__;})
-#define ParseStateAST std::vector<std::shared_ptr<AST>>
 
 #endif //COMPILER_COMPILER_INCLUDE_PARSE_H_

@@ -52,8 +52,11 @@ enum emTokentype : int {
   CONST,
   ELSE,
   EOFTOKEN,
-  UNDEFINED
+  UNDEFINED,
+  ARRAY
 };
+
+std::string toString(Tokentype);
 
 class Token {
  public:

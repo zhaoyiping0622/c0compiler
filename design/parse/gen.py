@@ -65,6 +65,10 @@ class Generate(object):
                 else:
                     print(line)
                     exit(1)
+        # print(*map(lambda x: "std::shared_ptr<AST> readFunName(" + x[1].upper() + x[2:-1] + ")();",
+        #            map(lambda x: x.replace('-','_').split("::=")[0].strip(), self.nonterminate)), sep="\n")
+        # print(*map(lambda x: "std::shared_ptr<AST> readFunName(" + x[1].upper() + x[2:-1] + ")(){}",
+        #            map(lambda x: x.replace('-', '_').split("::=")[0].strip(), self.nonterminate)), sep="\n")
         """
         change terminate to uppercase
         and remove '<' '>'
@@ -101,6 +105,12 @@ class Generate(object):
         print("nonterminate", file=f)
         for key, value in self.nonterminate.items():
             print(key, value, file=f)
+        f.close()
+        f = open("first", "w")
+        print("first set:", file=f)
+        for key, rule in self.rules.items():
+            for r, s in rule.items():
+                print(key, r, s, file=f)
         f.close()
 
     def genFirst(self):
@@ -164,10 +174,18 @@ class Generate(object):
         for k, v in self.nonterminate.items():
             self.rules[k] = v.split('|')
         self.genFirst()
-        self.output()
         # for k, v in self.nonterminate.items():
         #     print(k, v)
 
+    def conflict(self):
+        for nt, rule in self.rules.items():
+            for id1, (ak, av) in enumerate(rule.items()):
+                for id2, (bk, bv) in enumerate(rule.items()):
+                    if id1 <= id2: continue
+                    if av.intersection(bv):
+                        print(nt, ak, av, bk, bv, sep=" | ")
+
 
 g = Generate()
-g.output()
+# g.output()
+g.conflict()

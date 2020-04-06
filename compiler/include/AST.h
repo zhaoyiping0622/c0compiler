@@ -14,14 +14,16 @@
 
 // base AST class
 class AST {
+//  virtual void gen()=0;
  public:
   std::shared_ptr<AST> next;
-//  virtual void gen()=0;
   AST();
 };
 // declare value or function
 class ASTDeclare : public AST {
 //  virtual void install()=0;
+ public:
+  std::string valueId;
 };
 // declare function
 class ASTDeclareFun : public ASTDeclare {
@@ -37,9 +39,16 @@ class ASTDeclareValue : public ASTDeclare {
  public:
   bool isConst;
   Tokentype valueType;
-  Token value;
+  std::string value;// the value of valueid used in const
   ASTDeclareValue();
-  ASTDeclareValue(bool, Tokentype, Token);
+  ASTDeclareValue(bool, Tokentype, std::string, std::string);
+};
+class ASTDeclareArray : public ASTDeclare {
+ public:
+  int length;
+  Tokentype valueType;
+  ASTDeclareArray(int, Tokentype, std::string);
+  ASTDeclareArray();
 };
 // if else
 class ASTCondition : public AST {
@@ -62,8 +71,8 @@ class ASTLoop : public AST {
 class ASTCall : public AST {
  public:
   std::string funName;
-  std::vector<std::shared_ptr<AST>> args;
-  ASTCall(std::string, std::vector<std::shared_ptr<AST>>);
+  std::shared_ptr<AST> args;
+  ASTCall(std::string, std::shared_ptr<AST>);
   ASTCall();
 };
 // cmp cal assign and so on
@@ -87,7 +96,39 @@ class ASTLeaf : public AST {
 class ASTVector : public AST {
  public:
   std::vector<std::shared_ptr<AST>> v;
+  ASTVector();
   ASTVector(std::vector<std::shared_ptr<AST>> &&v);
+};
+
+// int
+class ASTRead : public AST {
+ public:
+  std::shared_ptr<ASTLeaf> args;
+  ASTRead();
+  ASTRead(std::shared_ptr<ASTLeaf> args);
+};
+
+// int
+class ASTWrite : public AST {
+ public:
+  std::shared_ptr<AST> args;
+  ASTWrite(std::shared_ptr<AST> &&args);
+  ASTWrite();
+};
+
+class ASTRet : public AST {
+ public:
+  std::shared_ptr<AST> value;
+  ASTRet();
+  ASTRet(std::shared_ptr<AST> value);
+};
+
+class ASTSwitch : public AST {
+ public:
+  std::shared_ptr<ASTStatement> statement;
+  std::shared_ptr<AST> cases;// default -> ASTLeaf->AST->ASTLeaf->AST...
+  ASTSwitch(std::shared_ptr<ASTStatement> statement, std::shared_ptr<AST> cases);
+  ASTSwitch();
 };
 
 #endif //COMPILER_COMPILER_INCLUDE_AST_H_

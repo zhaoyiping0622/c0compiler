@@ -5,8 +5,8 @@ T <id>
 N <addOp> ::= ADD | MINUS
 N <mulOp> ::= MUL | DIV
 N <cmpOp> ::= LT | LE | GT | GE | NE | EQ
-N <program> ::= <constDeclare><valueDeclare><program1><main>
-N <program1> ::= <noret-fun> <program1> | <fun> <program1> | <null>
+N <program> ::= <constDeclare><valueDeclare><funcs><main>
+N <funcs> ::= <noret-fun> <funcs> | <fun> <funcs> | <null>
 N <constDeclare> ::= const <constDefine>;<constDeclare> | <null>
 N <constDefine> ::= int <id> = <integer> <constDefine1> | char <id> = <character> <constDefine2>
 N <constDefine1> ::= ,<id> = <integer> <constDefine1> | <null>
@@ -55,9 +55,9 @@ N <argValue1> ::= ,<expression><argValue1> | <null>
 N <statements> ::= <statement><statements> | <null>
 N <read> ::= scanf(<read1>)
 N <read1> ::= <id><read2>
-N <read2> ::= ,<id> | <null>
+N <read2> ::= ,<id><read2> | <null>
 N <write> ::= printf(<write1>)
 N <write1> ::= <write3><write2>
-N <write2> ::= ,<write3><write2>
+N <write2> ::= ,<write3><write2> | <null>
 N <write3> ::= <string> | <expression>
 N <return> ::= return <expression>
