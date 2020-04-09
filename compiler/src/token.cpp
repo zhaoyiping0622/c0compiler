@@ -52,6 +52,7 @@ std::string toString(Tokentype tokentype) {
     TokentypeString(EOFTOKEN)
     TokentypeString(UNDEFINED)
     TokentypeString(ARRAY)
-    default:error("unexcepted Tokentype");
+    default:std::cerr << tokentype << std::endl;
+      error("unexcepted Tokentype");
   }
 }

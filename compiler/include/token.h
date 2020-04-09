@@ -5,6 +5,7 @@
 #ifndef COMPILER_COMPILER_INCLUDE_TOKEN_H_
 #define COMPILER_COMPILER_INCLUDE_TOKEN_H_
 #include "string"
+#include "iostream"
 #include "base.h"
 #include "symbol.h"
 #include "unordered_map"

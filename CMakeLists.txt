@@ -4,4 +4,6 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(compiler/include)
 include_directories(compiler/thirdparty)
 add_subdirectory(compiler)
+
+enable_testing()
 add_subdirectory(compiler_test)

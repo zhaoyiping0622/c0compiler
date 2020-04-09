@@ -7,21 +7,22 @@ void parseError(const char *errorMessage) {
   std::string em = "Parse Error: " + (std::string)errorMessage;
   error(em.c_str());
 }
-Parse::Parse(std::shared_ptr<Tokenizer> tokenlizer) : tokenlizer(tokenlizer) {
+Parse::Parse(std::shared_ptr<Tokenizer> tokenlizer) : tokenizer(tokenlizer) {
   nextToken = tokenlizer->getToken();
 }
 void Parse::init() {}
 void Parse::parse() {}
 Token Parse::getToken() {
+  if (nextToken.tokentype == UNDEFINED)nextToken = tokenizer->getToken();
   return nextToken;
 }
 Token Parse::popToken() {
   auto ret = nextToken;
-  nextToken = tokenlizer->getToken();
+  nextToken = tokenizer->getToken();
   return ret;
 }
 void Parse::parseErrorUnexpectedToken(const char *s) {
-  parseError(((std::string)"expected " + s + " read " + getToken().s).c_str());
+  parseError(((std::string)"expected " + s + " read " + toString(getToken().tokentype)).c_str());
 }
 // DONE
 std::shared_ptr<ASTLeaf> Parse::readAddOp() {
@@ -92,11 +93,13 @@ std::shared_ptr<AST> Parse::readProgram() {
             parseError("value must be declared before function declare");
           value = readValueDefine(head);
           tail->next = value;
+          break;
         case LSBRACKETS:func = readFun();
           func->valueId = head.second;
           func->returnType = head.first;
           tail->next = func;
           valuedeclare = false;
+          break;
         default:parseErrorUnexpectedToken(4, SEMICOLON, COMMA, LMBRACKETS, LSBRACKETS);
       }
     }
@@ -110,8 +113,12 @@ std::shared_ptr<ASTDeclareFun> Parse::readFunOrMain() {
   auto nextToken = popToken();
   std::shared_ptr<ASTDeclareFun> ret;
   switch (nextToken.tokentype) {
-    case MAIN:ret = readMain();
-    case ID:ret = readFun();
+    case MAIN:
+      ret = readMain();
+      break;
+    case ID:
+      ret = readFun();
+      break;
     default:parseErrorUnexpectedToken(2, MAIN, ID);
   }
   ret->valueId = nextToken.s;
@@ -197,9 +204,15 @@ std::string Parse::readInteger() {
 std::pair<Tokentype, std::string> Parse::readDeclareHead() {
   auto nextToken = getToken();
   auto ret = std::pair<Tokentype, std::string>();
-  if (nextToken.tokentype == INT or nextToken.tokentype == CHAR)
-    ret.first = nextToken.tokentype;
-  popToken();
+  switch (nextToken.tokentype){
+    case INT:
+    case CHAR:
+      ret.first = nextToken.tokentype;
+      popToken();
+      break;
+    default:
+      parseErrorUnexpectedToken(2,INT,CHAR);
+  }
   ret.second = match(ID).s;
   return ret;
 }
@@ -321,43 +334,47 @@ std::shared_ptr<ASTDeclareFun> Parse::readMain() {
   return ret;
 }
 // DONE
-std::shared_ptr<ASTStatement> Parse::readExpression() {
+std::shared_ptr<AST> Parse::readExpression() {
   auto nextToken = getToken();
-  std::shared_ptr<ASTStatement> ret;
+  std::shared_ptr<AST> ret;
   switch (nextToken.tokentype) {
     case ADD:
     case UNSIGNED:
     case LSBRACKETS:
     case ID:
     case MINUS:
-    case CHARACTER:ret = readItem();
+    case CHARACTER:
+      ret = readItem();
+      break;
     default:parseErrorUnexpectedToken(6, ADD, UNSIGNED, LSBRACKETS, ID, MINUS, CHARACTER);
   }
   nextToken = getToken();
   while (nextToken.tokentype == ADD || nextToken.tokentype == MINUS) { // AddOp
     auto addOp = readAddOp();
-    ret = std::make_shared<ASTStatement>(addOp->valuetype, ret, readItem());
+    ret = std::make_shared<ASTStatement>(addOp->valueType, ret, readItem());
     nextToken = getToken();
   }
   return ret;
 }
 // DONE
-std::shared_ptr<ASTStatement> Parse::readItem() {
+std::shared_ptr<AST> Parse::readItem() {
   auto nextToken = getToken();
-  std::shared_ptr<ASTStatement> ret;
+  std::shared_ptr<AST> ret;
   switch (nextToken.tokentype) {
     case ADD:
     case UNSIGNED:
     case LSBRACKETS:
     case ID:
     case MINUS:
-    case CHARACTER:ret = readItem();
+    case CHARACTER:
+      ret = readFactor();
+      break;
     default:parseErrorUnexpectedToken(6, ADD, UNSIGNED, LSBRACKETS, ID, MINUS, CHARACTER);
   }
   nextToken = getToken();
   while (nextToken.tokentype == DIV || nextToken.tokentype == MUL) { // MulOp
     auto mulOp = readMulOp();
-    ret = std::make_shared<ASTStatement>(mulOp->valuetype, ret, readItem());
+    ret = std::make_shared<ASTStatement>(mulOp->valueType, ret, readFactor());
     nextToken = getToken();
   }
   return ret;
@@ -454,7 +471,7 @@ std::shared_ptr<AST> Parse::readAssign(std::string id) {
     case ASSIGN: {
       popToken();
       auto ret = std::make_shared<ASTStatement>();
-      ret->tokentype = ASSIGN;
+      ret->operatorType = ASSIGN;
       ret->statement1 = std::make_shared<ASTLeaf>(id, ID);
       ret->statement2 = readExpression();
       return ret;
@@ -462,7 +479,7 @@ std::shared_ptr<AST> Parse::readAssign(std::string id) {
     case LMBRACKETS: {
       popToken();
       auto ret = std::make_shared<ASTStatement>();
-      ret->tokentype = ASSIGN;
+      ret->operatorType = ASSIGN;
       ret->statement1 = std::make_shared<ASTStatement>(ARRAY, std::make_shared<ASTLeaf>(id, ID), readExpression());
       match(RBBRACKETS);
       match(ASSIGN);
@@ -481,6 +498,7 @@ std::shared_ptr<ASTCondition> Parse::readCondition() {
   match(RBBRACKETS);
   ret->thenStatements = readStatement();
   ret->elseStatements = readElse();
+  return ret;
 }
 // DONE
 std::shared_ptr<AST> Parse::readElse() {
@@ -573,7 +591,8 @@ std::shared_ptr<ASTStatement> Parse::readCond() {
     case ID:
     case MINUS:
     case CHARACTER: {
-      auto ret = readExpression();
+      auto tmp = readExpression();
+      std::shared_ptr<ASTStatement> ret(nullptr);
       nextToken = getToken();
       switch (nextToken.tokentype) {
         case GT:
@@ -581,7 +600,9 @@ std::shared_ptr<ASTStatement> Parse::readCond() {
         case GE:
         case NE:
         case EQ:
-        case LT:ret = std::make_shared<ASTStatement>(readCmpOp()->valuetype, ret, readExpression());
+        case LT:ret = std::make_shared<ASTStatement>(readCmpOp()->valueType, tmp, readExpression());
+          break;
+        default:ret = std::make_shared<ASTStatement>(NE, tmp, std::make_shared<ASTLeaf>("0", INT));
       }
       return ret;
     }
@@ -595,7 +616,7 @@ std::shared_ptr<AST> Parse::readLoop() {
   match(LSBRACKETS);
   ret->cmp = readCond();
   match(RSBRACKETS);
-  ret->statements = readStatement();
+  ret->body = readStatement();
   return ret;
 }
 // DONE
@@ -603,7 +624,7 @@ std::shared_ptr<AST> Parse::readSwitch() {
   auto ret = std::make_shared<ASTSwitch>();
   match(SWITCH);
   match(LSBRACKETS);
-  ret->statement = readExpression();
+  ret->expression = readExpression();
   match(RSBRACKETS);
   match(LBBRACKETS);
   ret->cases = readSwitch1();
@@ -658,6 +679,7 @@ std::shared_ptr<ASTCall> Parse::readCall_fun(std::string id) {
   match(LSBRACKETS);
   ret->args = readArgValue();
   match(RSBRACKETS);
+  return ret;
 }
 // DONE
 std::shared_ptr<AST> Parse::readArgValue() {
@@ -789,13 +811,14 @@ std::shared_ptr<AST> Parse::getTail(std::shared_ptr<AST> now) {
   return now;
 }
 void Parse::parseErrorUnexpectedToken(int num, ...) {
-  va_list va_list;
+  va_list va_l;
   std::string s;
   Tokentype tokentype;
-  va_start(va_list, num);
-  tokentype = (Tokentype)va_arg(va_list, int);
+  va_start(va_l, num);
+  tokentype = (Tokentype)va_arg(va_l, int);
   s = toString(tokentype);
-  for (int i = 1; i < num; i++)s += " or " + toString((Tokentype)va_arg(va_list, int));
-  va_end(va_list);
+  for (int i = 1; i < num; i++)s += " or " + toString((Tokentype)va_arg(va_l, int));
+  va_end(va_l);
   parseErrorUnexpectedToken(s.c_str());
 }
+Parse::Parse() {}

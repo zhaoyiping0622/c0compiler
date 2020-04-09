@@ -16,13 +16,13 @@
 
 void parseError(const char *errorMessage);
 
-#define readFunName(name) read##name
 class Parse {
  public:
   Parse(std::shared_ptr<Tokenizer> tokenlizer);
+  Parse();
  protected:
   std::shared_ptr<AST> getTail(std::shared_ptr<AST> now);
-  std::shared_ptr<Tokenizer> tokenlizer;
+  std::shared_ptr<Tokenizer> tokenizer;
   std::shared_ptr<AST> root;
   void init();
   void parse();
@@ -47,8 +47,8 @@ class Parse {
   std::shared_ptr<ASTDeclare> readInFuncValueDeclare(); // DONE
   std::vector<std::pair<Tokentype, std::string>> readArg(); // DONE
   std::shared_ptr<ASTDeclareFun> readMain(); // DONE
-  std::shared_ptr<ASTStatement> readExpression(); // DONE
-  std::shared_ptr<ASTStatement> readItem(); // DONE
+  std::shared_ptr<AST> readExpression(); // DONE
+  std::shared_ptr<AST> readItem(); // DONE
   std::shared_ptr<AST> readFactor(); // DONE
   std::shared_ptr<AST> readFactor1(); // DONE
   std::shared_ptr<AST> readStatement(); // DONE

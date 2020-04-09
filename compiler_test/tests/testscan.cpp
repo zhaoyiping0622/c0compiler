@@ -2,10 +2,10 @@
 // Created by zhaoyiping on 2020/3/25.
 //
 
+#include "test.h"
 #include "scan.h"
-#include "gtest/gtest.h"
-#define RESOURCES ((std::string)"resources/scan/")
-#define FILELOCATION(x) (RESOURCES+(std::string)x)
+#define RESOURCESSCAN (RESOURCES+(std::string)"scan/")
+#define FILELOCATION(x) (RESOURCESSCAN+(std::string)x)
 
 class ScanTest : public testing::Test {
  protected:
@@ -145,6 +145,6 @@ FILETESTWITHERROR(stringMultiLine, false, ".*\"asdf\\\\n.*");
 FILETEST(char, true);
 FILETEST(string, true);
 #undef FILETEST
-#undef RESOURCES
+#undef RESOURCESSCAN
 #undef FILELOCATION
 #undef FILETESTWITHERROR
