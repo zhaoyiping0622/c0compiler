@@ -1,0 +1,2 @@
+scanf(a)
+scanf(a,b,c)

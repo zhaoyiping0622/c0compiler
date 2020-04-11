@@ -1,0 +1,6 @@
+int a(){
+  const int b=1;
+  const char c='1';
+  int d;
+  char e;
+}

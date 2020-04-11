@@ -1,0 +1,6 @@
+int a(){}
+char b(int a){}
+void a(int b,char c,int a){
+  const int a=1;
+  int b;
+}

@@ -1,0 +1,9 @@
+const int a=1;
+int a;
+void a(){ }
+int a(){ }
+void b(){ }
+void main(){
+  const int a=1;
+  int a;
+}

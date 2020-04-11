@@ -1,0 +1,4 @@
+int a;
+int c,d[9],e;
+char a;
+char c,d[9],e;

@@ -1,0 +1,63 @@
+T <character>
+T <string>
+T <unsigned>
+T <id>
+N <addOp> ::= ADD | MINUS
+N <mulOp> ::= MUL | DIV
+N <cmpOp> ::= LT | LE | GT | GE | NE | EQ
+N <program> ::= <constDeclare><valueDeclare><funcs><main>
+N <funcs> ::= <noret-fun> <funcs> | <fun> <funcs> | <null>
+N <constDeclare> ::= const <constDefine>;<constDeclare> | <null>
+N <constDefine> ::= int <id> = <integer> <constDefine1> | char <id> = <character> <constDefine2>
+N <constDefine1> ::= ,<id> = <integer> <constDefine1> | <null>
+N <constDefine2> ::= ,<id> = <character> <constDefine2> | <null>
+N <integer> ::= +<unsigned> | -<unsigned> | <unsigned>
+N <declareHead> ::= int <id> | char <id>
+N <valueDeclare> ::= <valueDefine>;<valueDeclare> | <null>
+N <valueDefine> ::= <type> <id> <valueDefine1> | <type> <id>[<unsigned>] <valueDefine1>
+N <valueDefine1> ::= ,<id><valueDefine1> | ,<id>[<unsigned>]<valueDefine1> | <null>
+N <constant> ::= <integer> | <character>
+N <type> ::= int | char
+N <fun> ::= <declareHead>(<arg>){<compound-statements>}
+N <noret-fun> ::= void <id>(<arg>){<compound-statements>}
+N <compound-statements> ::= <constDeclare><valueDeclare><statements>
+N <arg> ::= <type><id><arg1> | <null>
+N <arg1> ::= ,<type><id><arg1> | <null>
+N <main> ::= void main(){<compound-statements>}
+N <expression> ::= <item><expression1>
+N <expression1> ::= <addOp><item><expression1> | <null>
+N <item> ::= <factor><item1>
+N <item1> ::= <mulOp><factor><item1> | <null>
+N <factor> ::= + <factor1> | - <factor1> | <factor1>
+N <factor1> ::= <id> | <id>[<expression>] | <unsigned> | <character> | <call-fun> | (<expression>)
+N <statement> ::= <condition> | <loop> | {<statements>} | <call-fun>; | <call-noret-fun>; | <assign>; | <read>; | <write>; | ; | <switch> | <return>;
+N <assign> ::= <id> = <expression> | <id>[<expression>]=<expression>
+N <condition> ::= if(<boolean>) <statement> <else>
+N <else> ::= else <statement> | <null>
+N <boolean> ::= <or>
+N <or> ::= <and><or1>
+N <or1> ::= \|\|<and><or1> | <null>
+N <and> ::= <not><and1>
+N <and1> ::= &&<not><and1> | <null>
+N <not> ::= !<cond> | <cond>
+N <cond> ::= <expression><cond1>
+N <cond1> ::= <cmpOp><expression> | <null>
+N <loop> ::= while(<cond>)<statement>
+N <switch> ::= switch(<expression>){<switch1>}
+N <switch1> ::= <cases> <default>
+N <default> ::= default:<statement> | <null>
+N <cases> ::= <case><cases> | <null>
+N <case> ::= case<constant>:<statement>
+N <call-fun> ::= <id>(<argValue>)
+N <call-noret-fun> ::= <id>(<argValue>)
+N <argValue> ::= <expression><argValue1> | <null>
+N <argValue1> ::= ,<expression><argValue1> | <null>
+N <statements> ::= <statement><statements> | <null>
+N <read> ::= scanf(<read1>)
+N <read1> ::= <id><read2>
+N <read2> ::= ,<id><read2> | <null>
+N <write> ::= printf(<write1>)
+N <write1> ::= <write3><write2>
+N <write2> ::= ,<write3><write2> | <null>
+N <write3> ::= <string> | <expression>
+N <return> ::= return <expression>

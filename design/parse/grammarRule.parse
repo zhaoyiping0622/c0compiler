@@ -1,0 +1,175 @@
+T <character>
+T <string>
+T <unsigned>
+T <id>
+N <addOp>
+| ADD
+F return v[0];
+| MINUS
+F return v[0];
+N <mulOp>
+| MUL
+F return v[0];
+| DIV
+F return v[0];
+N <cmpOp>
+| LT
+F return v[0];
+| LE
+F return v[0];
+| GT
+F return v[0];
+| GE
+F return v[0];
+| NE
+F return v[0];
+| EQ
+F return v[0];
+N <program>
+| <constDeclare><valueDeclare><program1><main>
+N <program1> ::= <noret-fun> <program1> | <fun> <program1> | <null>
+N <constDeclare> ::= const <constDefine>;<constDeclare> | <null>
+N <constDefine> ::= int <id> = <integer> <constDefine1> | char <id> = <character> <constDefine2>
+N <constDefine1> ::= ,<id> = <integer> <constDefine1> | <null>
+N <constDefine2> ::= ,<id> = <character> <constDefine2> | <null>
+N <integer> ::= +<unsigned> | -<unsigned> | <unsigned>
+N <declareHead> ::= int <id> | char <id>
+N <valueDeclare> ::= <valueDefine>;<valueDeclare> | <null>
+N <valueDefine> ::= <type> <id> <valueDefine1> | <type> <id>[<unsigned>] <valueDefine1>
+N <valueDefine1> ::= ,<id><valueDefine1> | ,<id>[<unsigned>]<valueDefine1> | <null>
+N <constant> ::= <integer> | <character>
+N <type> ::= int | char
+N <fun> ::= <declareHead>(<arg>){<compound-statements>}
+N <noret-fun> ::= void <id>(<arg>){<compound-statements>}
+N <compound-statements> ::= <constDeclare><valueDeclare><statements>
+N <arg> ::= <type><id><arg1> | <null>
+N <arg1> ::= ,<type><id><arg1> | <null>
+N <main> ::= void main(){<compound-statements>}
+N <expression> ::= <item><expression1>
+N <expression1> ::= <addOp><item><expression1> | <null>
+N <item> ::= <factor><item1>
+N <item1> ::= <mulOp><factor><item1> | <null>
+N <factor> ::= + <factor1> | - <factor1> | <factor1>
+N <factor1> ::= <id> | <id>[<expression>] | <unsigned> | <character> | <call-fun> | (<expression>)
+N <statement> ::= <condition> | <loop> | {<statements>} | <call-fun>; | <call-noret-fun>; | <assign>; | <read>; | <write>; | ; | <switch> | <return>;
+N <assign> ::= <id> = <expression> | <id>[<expression>]=<expression>
+N <condition> ::= if(<boolean>) <statement> <else>
+N <else> ::= else <statement> | <null>
+N <boolean> ::= <or>
+N <or> ::= <and><or1>
+N <or1> ::= \|\|<and><or1> | <null>
+N <and>
+| <not><and1>
+
+N <and1>
+| &&<not><and1>
+
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+N <not>
+| !<cond>
+F return ASTStatement(NOT,v[0],std::shared_ptr<AST>(nullptr));
+| <cond>
+F return v[0];
+N <cond>
+| <expression><cond1>
+F if(v[1]){v[1]->statement1=v[0];return v[1]};
+F else return ASTStatement(NE,ASTLeaf("0",UNSIGNED),v[0]);
+N <cond1>
+| <cmpOp><expression>
+F return ASTStatement(v[0]->valuetype,std::shared_ptr<AST>(nullptr),v[1]);
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+N <loop>
+| while(<cond>)<statement>
+F return ASTLoop(v[0],v[1]);
+N <switch>
+| switch(<expression>){<switch1>}
+F return ASTSwitch(v[0],v[1]);
+N <switch1>
+| <cases> <default>
+F v[1]->next=v[0];
+F return v[1];
+N <default>
+| default:<statement>
+F return v[0];
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+N <cases>
+| <case><cases>
+F v[0]->next->next=v[1];
+F return v[0];
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+N <case>
+| case<constant>:<statement>
+F x[0]->next=x[1];
+F return x[0];
+N <call-fun>
+| <id>(<argValue>)
+F return ASTCall(v[0].value,v[1]);
+N <call-noret-fun>
+| <id>(<argValue>)
+F return ASTCall(v[0].value,v[1]);
+N <argValue>
+| <expression><argValue1>
+F v[0]->next=v[1];
+F return v[0];
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+
+N <argValue1>
+| ,<expression><argValue1>
+F v[0]->next=v[1];
+F return v[0];
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+
+N <statements>
+| <statement><statements>
+F v[0]->next=v[1];
+F return v[0];
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+
+N <read>
+| scanf(<read1>)
+F return ASTRead(v[0]);
+
+N <read1>
+| <id><read2>
+F v[0]->next=v[1];
+F return v[0];
+
+N <read2>
+| ,<id><read2>
+F v[0]->next=v[1];
+F return v[0];
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+
+N <write>
+| printf(<write1>)
+return ASTWrite(v[0]);
+
+N <write1>
+| <write3><write2>
+F v[0]->next=v[1];
+F return v[0];
+
+N <write2>
+|,<write3><write2>
+F v[0]->next=v[1];
+F return v[0];
+| <null>
+F return std::shared_ptr<AST>(nullptr);
+
+N <write3>
+| <string>
+F return v[0];
+| <expression>
+F return v[0];
+
+N <return>
+| return <expression>
+F return ASTRet(v[1]);

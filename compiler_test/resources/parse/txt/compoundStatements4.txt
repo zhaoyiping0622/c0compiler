@@ -1,0 +1,6 @@
+const int a=1;
+const char a='1',b='a';
+const int a=1,b=0,c=-1;
+int a;
+char a[1],b;
+int a,b[1],c;

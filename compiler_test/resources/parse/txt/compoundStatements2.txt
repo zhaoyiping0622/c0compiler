@@ -1,0 +1,5 @@
+int a;
+char a[1],b;
+int a,b[1],c;
+if(a)a=a+b; else b=a+b;
+while(a)a=a+b();

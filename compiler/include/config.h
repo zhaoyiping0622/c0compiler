@@ -8,6 +8,7 @@
 #include "string"
 #include "fstream"
 #include "argparse.hpp"
+#include "base.h"
 class Config {
  public:
   std::string inputFileName;

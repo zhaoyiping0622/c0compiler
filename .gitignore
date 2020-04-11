@@ -1,7 +1,15 @@
 cmake-build-debug
 .idea
 .vscode
+.vs
+out
 build
 design/scan/cpp
 design/scan/dot
 design/scan/png
+tmp*
+CMakeSettings.json
+compiler_test/resources/parse/json
+compiler_test/resources/parse/token
+Testing
+__pycache__
