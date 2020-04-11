@@ -1,0 +1,2 @@
+printf("1",a+b,1)
+printf('1')

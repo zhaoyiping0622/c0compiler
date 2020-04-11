@@ -21,6 +21,8 @@ file(COPY resources DESTINATION .)
 aux_source_directory(../compiler/src DIR_SRC)
 list(REMOVE_ITEM DIR_SRC ../compiler/src/main.cpp)
 
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "--coverage")
+
 add_executable(compiler_test ${DIR_TESTS} ${DIR_SRC})
 target_link_libraries(compiler_test ${GTEST_BOTH_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 add_dependencies(compiler_test rsc)

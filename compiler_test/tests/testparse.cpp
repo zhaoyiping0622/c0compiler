@@ -68,7 +68,7 @@ class FileTokenizer : public Tokenizer {
     string2token(EOFTOKEN);
 #undef string2token
   }
-  Token getToken() {
+  Token getToken(std::istream &input) {
     auto f = [](std::string &s) { while (s.length() && isspace(s.back()))s.pop_back(); };
     std::string token;
     std::string s;
@@ -79,6 +79,9 @@ class FileTokenizer : public Tokenizer {
     f(token);
     if (s.length() == 0)return Token(EOFTOKEN, "");
     return Token(ma[token], s);
+  }
+  Token getToken() {
+    return getToken(this->input);
   }
 };
 
@@ -96,30 +99,91 @@ class ParseTest : public Parse, public testing::Test {
   }
 };
 
-#define PARSETEST(filename, ...)\
+#define PARSESINGLETEST(filename, read)\
 TEST_F(ParseTest,filename){\
   setTokenizer(#filename);\
   json j = getSTDJSON(#filename);\
-  __VA_ARGS__\
+  json j2 = read();\
   ASSERT_EQ(j, j2) << j << std::endl << j2 << std::endl;\
 }
 
-PARSETEST(aplusb, json j2 = readExpression();)
+#define PARSEMULTITEST(filename, read)\
+TEST_F(ParseTest,filename){\
+  setTokenizer(#filename);\
+  json jstd = getSTDJSON(#filename);\
+  json j2;\
+  auto ret = std::shared_ptr<AST>(nullptr);\
+  auto tail = ret;\
+  while (getToken().tokentype != EOFTOKEN) {\
+    if (ret) {tail = getTail(tail); tail->next = read();}\
+    else tail = ret = read();\
+  }\
+  j2 = ret;\
+  ASSERT_EQ(jstd.dump(0), j2.dump(0)) << jstd.dump(1) << std::endl << j2.dump(1) << std::endl;\
+  ASSERT_EQ(jstd, j2) << jstd << std::endl << j2 << std::endl;\
+}
 
-PARSETEST(constDeclare, json j2 = readConstDeclare();)
-PARSETEST
-(valueDeclare, json j2;
-    auto nextToken = getToken();
-    auto ret = std::shared_ptr<AST>(nullptr);
-    auto tail = ret;
-    while (getToken().tokentype != EOFTOKEN) {
-      if (ret) tail = getTail(tail), tail->next = readInFuncValueDeclare();
-      else tail = ret = readInFuncValueDeclare();
-    }
-    j2 = ret;
-)
+PARSESINGLETEST(aplusb, readExpression)
+PARSESINGLETEST(constDeclare, readConstDeclare)
+PARSESINGLETEST (compoundStatements1, readCompound_statements)
+PARSESINGLETEST (compoundStatements2, readCompound_statements)
+PARSESINGLETEST (compoundStatements3, readCompound_statements)
+PARSESINGLETEST (compoundStatements4, readCompound_statements)
+PARSESINGLETEST (compoundStatements5, readCompound_statements)
+PARSESINGLETEST (main, readMain)
+PARSESINGLETEST (funOrMain, readFunOrMain)
+PARSESINGLETEST (statements, readStatements)
+PARSESINGLETEST (program1, readProgram)
 
-#undef PARSETEST
+PARSEMULTITEST (valueDeclare, readInFuncValueDeclare)
+PARSEMULTITEST (expression, readExpression)
+PARSEMULTITEST (assign, readAssign)
+PARSEMULTITEST (boolean, readBoolean)
+PARSEMULTITEST (condition, readCondition)
+PARSEMULTITEST (loop, readLoop)
+PARSEMULTITEST (switch, readSwitch)
+PARSEMULTITEST (callfun, readCall_fun)
+PARSEMULTITEST (read, readRead)
+PARSEMULTITEST (write, readWrite)
+PARSEMULTITEST (return, readReturn)
+PARSEMULTITEST (fun, readFun)
+PARSEMULTITEST (statement, readStatement)
+
+TEST_F(ParseTest, integer) {
+  setTokenizer("integer");
+  ASSERT_EQ("1", readInteger());
+  ASSERT_EQ("-1", readInteger());
+  ASSERT_EQ("1", readInteger());
+  ASSERT_EQ(getToken().tokentype, EOFTOKEN);
+}
+
+TEST_F(ParseTest, cmpOp) {
+  setTokenizer("cmpOp");
+  ASSERT_EQ(LT, readCmpOp()->valueType);
+  ASSERT_EQ(GT, readCmpOp()->valueType);
+  ASSERT_EQ(LE, readCmpOp()->valueType);
+  ASSERT_EQ(GE, readCmpOp()->valueType);
+  ASSERT_EQ(NE, readCmpOp()->valueType);
+  ASSERT_EQ(EQ, readCmpOp()->valueType);
+  ASSERT_EQ(getToken().tokentype, EOFTOKEN);
+}
+
+TEST_F(ParseTest, addOp) {
+  setTokenizer("addOp");
+  ASSERT_EQ(ADD, readAddOp()->valueType);
+  ASSERT_EQ(MINUS, readAddOp()->valueType);
+  ASSERT_EQ(getToken().tokentype, EOFTOKEN);
+}
+
+TEST_F(ParseTest, mulOp) {
+  setTokenizer("mulOp");
+  ASSERT_EQ(MUL, readMulOp()->valueType);
+  ASSERT_EQ(DIV, readMulOp()->valueType);
+  ASSERT_EQ(getToken().tokentype, EOFTOKEN);
+}
+
+#undef PARSEMULTITEST
+#undef PARSESINGLETEST
 #undef TOKENLOCATION
 #undef TOKENFILENAME
 #undef JSONFILENAME

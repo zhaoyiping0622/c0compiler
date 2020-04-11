@@ -1,0 +1,13 @@
+if(a)a=a+b;else b=a+b;
+while(a)a=a+b;
+{
+if(a)a=a+b;else b=a+b;
+while(a)a=a+b;
+}
+a();
+a=a+b;
+scanf(a,b,c);
+printf("1",'1',1,c);
+;
+switch(a){}
+return a;

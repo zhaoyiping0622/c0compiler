@@ -1,0 +1,80 @@
+if __name__ == "__main__":
+    from AST.AST import *
+else:
+    from .AST.AST import *
+
+lines = []
+lines.append(ASTDeclareValue(
+    isConst=True,
+    valueId="a",
+    value="1",
+    valueType="INT"
+))
+lines.append(ASTDeclareValue(
+    isConst=True,
+    valueId="a",
+    value="'1'",
+    valueType="CHAR"
+).copy(
+    ASTDeclareValue(
+        isConst=True,
+        valueType="CHAR",
+        valueId="b",
+        value="'a'"
+    )
+))
+lines.append(ASTDeclareValue(
+    isConst=True,
+    valueId="a",
+    value="1",
+    valueType="INT"
+).copy(
+    ASTDeclareValue(
+        isConst=True,
+        valueId="b",
+        value="0",
+        valueType="INT"
+    ).copy(
+        ASTDeclareValue(
+            isConst=True,
+            valueId="c",
+            value="-1",
+            valueType="INT"
+        )
+    )
+))
+lines.append(
+    ASTDeclareValue(
+        valueId="a",
+        valueType="INT",
+    )
+)
+lines.append(
+    ASTDeclareArray(
+        valueId="a",
+        valueType="CHAR",
+        length=1
+    ).copy(
+        ASTDeclareValue(
+            valueId="b",
+            valueType="CHAR"
+        )
+    )
+)
+lines.append(
+    ASTDeclareValue(
+        valueId="a",
+        valueType="INT"
+    ).copy(ASTDeclareArray(
+        valueId="b",
+        valueType="INT",
+        length=1
+    ).copy(
+        ASTDeclareValue(
+            valueId="c",
+            valueType="INT"
+        )
+    ))
+)
+
+printLines(lines)

@@ -1,0 +1,13 @@
+switch(a){
+  case 1:a=a+b;
+  case 0:b=a+b;
+  default:;
+}
+switch(a+b){
+  case '1':a=a+b;
+  case '0':b=a+b;
+}
+switch(a){
+  default:;
+}
+switch(a){}

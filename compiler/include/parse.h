@@ -40,19 +40,19 @@ class Parse {
   std::string readInteger(); // DONE
   std::pair<Tokentype, std::string> readDeclareHead(); // DONE
   std::shared_ptr<ASTDeclare> readValueDefine(std::pair<Tokentype, std::string>); // DONE
-  std::shared_ptr<ASTLeaf> readConstant(); // DONE
+  std::shared_ptr<AST> readConstant(); // DONE
   Tokentype readType(); // DONE
-  std::shared_ptr<ASTDeclareFun> readFun(); // DONE
+  std::shared_ptr<ASTDeclareFun> readFun(Tokentype tokentype = UNDEFINED, std::string valueId = ""); // DONE
   std::shared_ptr<AST> readCompound_statements(); // DONE
   std::shared_ptr<ASTDeclare> readInFuncValueDeclare(); // DONE
   std::vector<std::pair<Tokentype, std::string>> readArg(); // DONE
-  std::shared_ptr<ASTDeclareFun> readMain(); // DONE
+  std::shared_ptr<ASTDeclareFun> readMain(Tokentype tokentype = UNDEFINED, std::string func = ""); // DONE
   std::shared_ptr<AST> readExpression(); // DONE
   std::shared_ptr<AST> readItem(); // DONE
   std::shared_ptr<AST> readFactor(); // DONE
   std::shared_ptr<AST> readFactor1(); // DONE
   std::shared_ptr<AST> readStatement(); // DONE
-  std::shared_ptr<AST> readAssign(std::string); // DONE
+  std::shared_ptr<AST> readAssign(std::string id = ""); // DONE
   std::shared_ptr<ASTCondition> readCondition(); // DONE
   std::shared_ptr<AST> readElse(); // DONE
   std::shared_ptr<ASTStatement> readBoolean(); // DONE
@@ -74,9 +74,9 @@ class Parse {
   std::shared_ptr<AST> readWrite2();
   std::shared_ptr<ASTRet> readReturn();
   std::string readCharacter();
-  std::string readId();
-  std::string readUnsigned();
-  std::string readString();
+//  std::string readId();
+//  std::string readUnsigned();
+//  std::string readString();
   void parseErrorUnexpectedToken(int num, ...);
   void parseErrorUnexpectedToken(const char *);
 };

@@ -1,6 +1,8 @@
 def toJSON(x):
     if x is None:
         return None
+    if type(x) is str:
+        return x
     return x.toJSON()
 
 
@@ -11,6 +13,15 @@ class AST:
         self.dic = {}
         self.name = name
 
+    def copy(self, next=None):
+        from copy import deepcopy
+        ret = deepcopy(self)
+        a = ret
+        while a.next is not None:
+            a = a.next
+        a.next = next
+        return ret
+
     def setnext(self, next):
         AST.__init__(self, next=next)
 
@@ -19,11 +30,11 @@ class AST:
         print(dumps(toJSON(self)))
 
     def toJSON(self):
+        self.dic["name"] = self.name
         if self.next:
             self.dic["next"] = toJSON(self.next)
         else:
             self.dic["next"] = None
-        self.dic["name"] = self.name
         return self.dic
 
 
@@ -49,15 +60,21 @@ class ASTDeclareFun(ASTDeclare):
         self.body = body
         self.returnType = returnType
 
-    def setreturnType(self, returnType): self.returnType = returnType
+    def setreturnType(self, returnType):
+        self.returnType = returnType
 
-    def setargs(self, args): self.args = args
+    def setargs(self, args):
+        self.args = args
 
-    def setbody(self, body): self.body = body
+    def setbody(self, body):
+        self.body = body
 
     def toJSON(self):
         super().toJSON()
-        self.dic["args"] = [{"valueType": x[0], "valueId": x[1]} for x in self.args]
+        if self.args:
+            self.dic["args"] = [{"valueType": x[0], "valueId": x[1]} for x in self.args]
+        else:
+            self.dic["args"] = None
         self.dic["returnType"] = self.returnType
         self.dic["body"] = toJSON(self.body)
         return self.dic
@@ -65,7 +82,7 @@ class ASTDeclareFun(ASTDeclare):
 
 class ASTDeclareValue(ASTDeclare):
 
-    def __init__(self, next=None, valueId=None, isConst=False, valueType=None, value=None):
+    def __init__(self, next=None, valueId=None, isConst=False, valueType=None, value=""):
         ASTDeclare.__init__(self, next=next, valueId=valueId, name="value declare")
         self.isConst = isConst
         self.valueType = valueType
@@ -255,6 +272,50 @@ class ASTSwitch(AST):
         self.dic["expression"] = toJSON(self.expression)
         self.dic["cases"] = toJSON(self.cases)
         return self.dic
+
+
+a = ASTLeaf(value="a", valueType="ID")
+b = ASTLeaf(value="b", valueType="ID")
+c = ASTLeaf(value="c", valueType="ID")
+num1 = ASTLeaf(value="1", valueType="UNSIGNED")
+num0 = ASTLeaf(value="0", valueType="UNSIGNED")
+numf1 = ASTStatement(operatorType="MINUS", statement1=num1)
+char1 = ASTLeaf(value="'1'", valueType="CHARACTER")
+char0 = ASTLeaf(value="'0'", valueType="CHARACTER")
+charf1 = ASTStatement(operatorType="MINUS", statement1=char1)
+string1 = ASTLeaf(value='"1"', valueType="STRING")
+aplusb = ASTStatement(operatorType="ADD", statement1=a, statement2=b)
+aminusb = ASTStatement(operatorType="MINUS", statement1=a, statement2=b)
+amulb = ASTStatement(operatorType="MUL", statement1=a, statement2=b)
+oneaddone = ASTStatement(operatorType="ADD", statement1=num1, statement2=num1)
+Aarray1 = ASTStatement(operatorType="ARRAY", statement1=a, statement2=num1)
+Aarrayaplusb = ASTStatement(operatorType="ARRAY", statement1=a, statement2=aplusb)
+bmulc = ASTStatement(operatorType="MUL", statement1=b, statement2=c)
+Aarrayb = ASTStatement(operatorType="ARRAY", statement1=a, statement2=b)
+aNE0 = ASTStatement(operatorType="NE", statement1=a, statement2=num0)
+aEQ0 = ASTStatement(operatorType="EQ", statement1=a, statement2=num0)
+bNE0 = ASTStatement(operatorType="NE", statement1=b, statement2=num0)
+bEQ0 = ASTStatement(operatorType="EQ", statement1=b, statement2=num0)
+aLTb = ASTStatement(operatorType="LT", statement1=a, statement2=b)
+aGTb = ASTStatement(operatorType="GT", statement1=a, statement2=b)
+aASSIGNaplusb = ASTStatement(operatorType="ASSIGN", statement1=a, statement2=aplusb)
+bASSIGNaplusb = ASTStatement(operatorType="ASSIGN", statement1=b, statement2=aplusb)
+
+
+def joinLines(lines: list):
+    for i in range(len(lines)):
+        if i != 0:
+            a = lines[i - 1]
+            while a.next is not None:
+                a = a.next
+            a.next = lines[i]
+    return lines
+
+
+def printLines(lines: list):
+    from json import dumps
+    lines = joinLines(lines)
+    print(dumps(lines[0].toJSON()).replace("None", "null"))
 
 
 if __name__ == "__main__":

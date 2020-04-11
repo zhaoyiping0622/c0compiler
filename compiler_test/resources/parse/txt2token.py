@@ -49,7 +49,7 @@ def run(file: str, output: str):
     inputFile = open(file, "r")
     outputFile = open(output, "w")
     assert not inputFile.closed
-    s = ''.join(map(lambda x: x.strip(), inputFile.readlines()))
+    s = '\n'.join(map(lambda x: x.strip(), inputFile.readlines()))
     idx = 0
     while idx < len(s):
         now = ""
@@ -78,7 +78,7 @@ def run(file: str, output: str):
             token = "STRING"
             idx += 3
         elif s[idx] in digits:  # unsigned
-            assert s[idx + 1] not in digits
+            assert idx + 1 == len(s) or s[idx + 1] not in digits,f"{s[idx]},{s[idx+1]}"
             now = s[idx]
             token = "UNSIGNED"
             idx += 1
