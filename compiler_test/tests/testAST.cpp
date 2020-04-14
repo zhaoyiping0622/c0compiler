@@ -16,7 +16,6 @@ TEST(ASTTestJSON, DeclareFunNoArg) {
   j["args"] = nullptr;
   j["body"] = nullptr;
   j["valueId"] = "test";
-  j["next"] = nullptr;
   json j2 = ast;
   ASSERT_EQ(j, j2);
 }
@@ -34,7 +33,6 @@ TEST(ASTTestJSON, DeclareFun1Arg) {
   j["args"][0] = {{"valueType", toString(INT)}, {"valueId", "abc"}};
   j["body"] = nullptr;
   j["valueId"] = "test";
-  j["next"] = nullptr;
   json j2 = ast;
   ASSERT_EQ(j, j2);
 }
@@ -53,7 +51,6 @@ TEST(ASTTestJSON, DeclareFunManyArg) {
   j["args"][1] = {{"valueType", toString(CHAR)}, {"valueId", "def"}};
   j["body"] = nullptr;
   j["valueId"] = "test";
-  j["next"] = nullptr;
   json j2 = ast;
   ASSERT_EQ(j, j2);
   j["args"][1] = {{"valueType", toString(INT)}, {"valueId", "abc"}};
@@ -69,7 +66,6 @@ TEST(ASTTestJSON, DeclareValueINT) {
   j["const"] = true;
   j["valueType"] = toString(INT);
   j["value"] = "123";
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, DeclareValueCHAR) {
@@ -81,7 +77,6 @@ TEST(ASTTestJSON, DeclareValueCHAR) {
   j["const"] = true;
   j["valueType"] = toString(CHAR);
   j["value"] = "\\\'";
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, DeclareArray) {
@@ -92,7 +87,6 @@ TEST(ASTTestJSON, DeclareArray) {
   j["valueId"] = "abc";
   j["length"] = 10;
   j["valueType"] = toString(INT);
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Condition) {
@@ -102,7 +96,6 @@ TEST(ASTTestJSON, Condition) {
   j["cmp"] = nullptr;
   j["then"] = nullptr;
   j["else"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Loop) {
@@ -111,7 +104,6 @@ TEST(ASTTestJSON, Loop) {
   j["name"] = "loop";
   j["cmp"] = nullptr;
   j["body"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Call) {
@@ -120,17 +112,15 @@ TEST(ASTTestJSON, Call) {
   j["name"] = "call";
   j["funName"] = "test";
   j["args"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Statement) {
-  auto ast = std::make_shared<ASTStatement>(ADD, nullptr, nullptr);
+  auto ast = std::make_shared<ASTExpression>(ADD, nullptr, nullptr);
   json j;
-  j["name"] = "statement";
+  j["name"] = "expression";
   j["operatorType"] = toString(ADD);
-  j["statement1"] = nullptr;
-  j["statement2"] = nullptr;
-  j["next"] = nullptr;
+  j["expression1"] = nullptr;
+  j["expression2"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Leaf) {
@@ -139,7 +129,6 @@ TEST(ASTTestJSON, Leaf) {
   j["name"] = "leaf";
   j["value"] = "abc";
   j["valueType"] = toString(INT);
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Read) {
@@ -147,7 +136,6 @@ TEST(ASTTestJSON, Read) {
   json j;
   j["name"] = "read";
   j["args"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Write) {
@@ -155,7 +143,6 @@ TEST(ASTTestJSON, Write) {
   json j;
   j["name"] = "write";
   j["args"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Ret) {
@@ -163,7 +150,6 @@ TEST(ASTTestJSON, Ret) {
   json j;
   j["name"] = "ret";
   j["value"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Switch) {
@@ -172,6 +158,5 @@ TEST(ASTTestJSON, Switch) {
   j["name"] = "switch";
   j["cases"] = nullptr;
   j["expression"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }

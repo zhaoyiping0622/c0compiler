@@ -1,15 +1,15 @@
 from json import dumps
+
 if __name__ == "__main__":
     from AST.AST import *
 else:
     from .AST.AST import *
 
-lines=[]
-lines.append(ASTStatement(operatorType="ASSIGN", statement1=a, statement2=b))
-lines.append(ASTStatement(operatorType="ASSIGN", statement1=a, statement2=oneaddone))
-lines.append(ASTStatement(operatorType="ASSIGN", statement1=a, statement2=bmulc))
-lines.append(ASTStatement(operatorType="ASSIGN", statement1=Aarrayb, statement2=c))
-lines.append(ASTStatement(operatorType="ASSIGN", statement1=Aarrayb, statement2=num1))
+lines = []
+lines.append(ASTExpression(operatorType="ASSIGN", expression1=a, expression2=b))
+lines.append(ASTExpression(operatorType="ASSIGN", expression1=a, expression2=oneaddone))
+lines.append(ASTExpression(operatorType="ASSIGN", expression1=a, expression2=bmulc))
+lines.append(ASTExpression(operatorType="ASSIGN", expression1=Aarrayb, expression2=c))
+lines.append(ASTExpression(operatorType="ASSIGN", expression1=Aarrayb, expression2=num1))
 
 printLines(lines)
-

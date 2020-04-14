@@ -118,16 +118,16 @@ std::shared_ptr<ASTDeclareFun> Parse::readFunOrMain() {
 // DONE
 std::shared_ptr<ASTDeclareValue> Parse::readConstDeclare() {
   auto ret = std::shared_ptr<ASTDeclareValue>(nullptr);
-  std::shared_ptr<AST> now = ret;
+  std::shared_ptr<AST> tail = ret;
   while (getToken().tokentype == CONST) {
-    now = getTail(now);
+    tail = getTail(tail);
     popToken();
     if (ret) {
-      now->next = readConstDefine();
-      now = now->next;
+      tail->next = readConstDefine();
+      tail = tail->next;
     } else {
       ret = readConstDefine();
-      now = ret;
+      tail = ret;
     }
     match(SEMICOLON);
   }
@@ -235,9 +235,9 @@ std::shared_ptr<ASTDeclare> Parse::readValueDefine(std::pair<Tokentype, std::str
 std::shared_ptr<AST> Parse::readConstant() {
   switch (getToken().tokentype) {
     case MINUS:popToken();
-      return std::make_shared<ASTStatement>(MINUS,
-                                            std::make_shared<ASTLeaf>(readInteger(), UNSIGNED),
-                                            std::shared_ptr<AST>(nullptr));
+      return std::make_shared<ASTExpression>(MINUS,
+                                             std::make_shared<ASTLeaf>(readInteger(), UNSIGNED),
+                                             std::shared_ptr<AST>(nullptr));
     case ADD:
     case UNSIGNED:return std::make_shared<ASTLeaf>(readInteger(), UNSIGNED);
     case CHARACTER:return std::make_shared<ASTLeaf>(readCharacter(), CHARACTER);
@@ -364,7 +364,7 @@ std::shared_ptr<AST> Parse::readExpression() {
   nextToken = getToken();
   while (nextToken.tokentype == ADD || nextToken.tokentype == MINUS) { // AddOp
     auto addOp = readAddOp();
-    ret = std::make_shared<ASTStatement>(addOp->valueType, ret, readItem());
+    ret = std::make_shared<ASTExpression>(addOp->valueType, ret, readItem());
     nextToken = getToken();
   }
   return ret;
@@ -386,7 +386,7 @@ std::shared_ptr<AST> Parse::readItem() {
   nextToken = getToken();
   while (nextToken.tokentype == DIV || nextToken.tokentype == MUL) { // MulOp
     auto mulOp = readMulOp();
-    ret = std::make_shared<ASTStatement>(mulOp->valueType, ret, readFactor());
+    ret = std::make_shared<ASTExpression>(mulOp->valueType, ret, readFactor());
     nextToken = getToken();
   }
   return ret;
@@ -396,7 +396,7 @@ std::shared_ptr<AST> Parse::readFactor() {
   auto nextToken = getToken();
   switch (nextToken.tokentype) {
     case MINUS:popToken();
-      return std::make_shared<ASTStatement>(MINUS, readFactor1(), std::shared_ptr<AST>(nullptr));
+      return std::make_shared<ASTExpression>(MINUS, readFactor1(), std::shared_ptr<AST>(nullptr));
     case ADD:popToken();
     case LSBRACKETS:
     case UNSIGNED:
@@ -416,7 +416,7 @@ std::shared_ptr<AST> Parse::readFactor1() {
       if (nextToken.tokentype == LMBRACKETS) {
         // array
         match(LMBRACKETS);
-        auto ret = std::make_shared<ASTStatement>(ARRAY, tmp, readExpression());
+        auto ret = std::make_shared<ASTExpression>(ARRAY, tmp, readExpression());
         match(RMBRACKETS);
         return ret;
       } else if (nextToken.tokentype == LSBRACKETS) {
@@ -461,9 +461,9 @@ std::shared_ptr<AST> Parse::readStatement() {
     case PRINTF:ret = readWrite();
       break;
     case SEMICOLON:popToken();
-      return std::make_shared<ASTStatement>(UNDEFINED,
-                                            std::shared_ptr<AST>(nullptr),
-                                            std::shared_ptr<AST>(nullptr));
+      return std::make_shared<ASTExpression>(UNDEFINED,
+                                             std::shared_ptr<AST>(nullptr),
+                                             std::shared_ptr<AST>(nullptr));
     case SWITCH:return readSwitch();
     case RETURN:ret = readReturn();
       break;
@@ -489,20 +489,20 @@ std::shared_ptr<AST> Parse::readAssign(std::string id) {
   switch (nextToken.tokentype) {
     case ASSIGN: {
       popToken();
-      auto ret = std::make_shared<ASTStatement>();
+      auto ret = std::make_shared<ASTExpression>();
       ret->operatorType = ASSIGN;
-      ret->statement1 = std::make_shared<ASTLeaf>(id, ID);
-      ret->statement2 = readExpression();
+      ret->expression1 = std::make_shared<ASTLeaf>(id, ID);
+      ret->expression2 = readExpression();
       return ret;
     }
     case LMBRACKETS: {
       popToken();
-      auto ret = std::make_shared<ASTStatement>();
+      auto ret = std::make_shared<ASTExpression>();
       ret->operatorType = ASSIGN;
-      ret->statement1 = std::make_shared<ASTStatement>(ARRAY, std::make_shared<ASTLeaf>(id, ID), readExpression());
+      ret->expression1 = std::make_shared<ASTExpression>(ARRAY, std::make_shared<ASTLeaf>(id, ID), readExpression());
       match(RMBRACKETS);
       match(ASSIGN);
-      ret->statement2 = readExpression();
+      ret->expression2 = readExpression();
       return ret;
     }
     default:parseErrorUnexpectedToken(2, ASSIGN, LMBRACKETS);
@@ -526,11 +526,11 @@ std::shared_ptr<AST> Parse::readElse() {
     popToken();
     return readStatement();
   } else {
-    return std::shared_ptr<ASTStatement>(nullptr);
+    return std::shared_ptr<ASTExpression>(nullptr);
   }
 }
 // DONE
-std::shared_ptr<ASTStatement> Parse::readBoolean() {
+std::shared_ptr<ASTExpression> Parse::readBoolean() {
   auto nextToken = getToken();
   switch (nextToken.tokentype) {
     case ADD:
@@ -544,7 +544,7 @@ std::shared_ptr<ASTStatement> Parse::readBoolean() {
   }
 }
 // DONE
-std::shared_ptr<ASTStatement> Parse::readOr() {
+std::shared_ptr<ASTExpression> Parse::readOr() {
   auto nextToken = getToken();
   switch (nextToken.tokentype) {
     case ADD:
@@ -554,10 +554,10 @@ std::shared_ptr<ASTStatement> Parse::readOr() {
     case ID:
     case MINUS:
     case CHARACTER: {
-      std::shared_ptr<ASTStatement> ret = readAnd();
+      std::shared_ptr<ASTExpression> ret = readAnd();
       while (getToken().tokentype == OR) {
         popToken();
-        ret = std::make_shared<ASTStatement>(OR, ret, readAnd());
+        ret = std::make_shared<ASTExpression>(OR, ret, readAnd());
       }
       return ret;
     }
@@ -565,7 +565,7 @@ std::shared_ptr<ASTStatement> Parse::readOr() {
   }
 }
 // DONE
-std::shared_ptr<ASTStatement> Parse::readAnd() {
+std::shared_ptr<ASTExpression> Parse::readAnd() {
   auto nextToken = getToken();
   switch (nextToken.tokentype) {
     case AND:
@@ -575,10 +575,10 @@ std::shared_ptr<ASTStatement> Parse::readAnd() {
     case ID:
     case MINUS:
     case CHARACTER: {
-      std::shared_ptr<ASTStatement> ret = readNot();
+      std::shared_ptr<ASTExpression> ret = readNot();
       while (getToken().tokentype == AND) {
         popToken();
-        ret = std::make_shared<ASTStatement>(AND, ret, readNot());
+        ret = std::make_shared<ASTExpression>(AND, ret, readNot());
       }
       return ret;
     }
@@ -586,11 +586,11 @@ std::shared_ptr<ASTStatement> Parse::readAnd() {
   }
 }
 // DONE
-std::shared_ptr<ASTStatement> Parse::readNot() {
+std::shared_ptr<ASTExpression> Parse::readNot() {
   auto nextToken = getToken();
   switch (nextToken.tokentype) {
     case NOT:popToken();
-      return std::make_shared<ASTStatement>(NOT, readCond(), std::shared_ptr<AST>(nullptr));
+      return std::make_shared<ASTExpression>(NOT, readCond(), std::shared_ptr<AST>(nullptr));
     case ADD:
     case UNSIGNED:
     case LSBRACKETS:
@@ -601,7 +601,7 @@ std::shared_ptr<ASTStatement> Parse::readNot() {
   }
 }
 // DONE
-std::shared_ptr<ASTStatement> Parse::readCond() {
+std::shared_ptr<ASTExpression> Parse::readCond() {
   auto nextToken = getToken();
   switch (nextToken.tokentype) {
     case ADD:
@@ -611,7 +611,7 @@ std::shared_ptr<ASTStatement> Parse::readCond() {
     case MINUS:
     case CHARACTER: {
       auto tmp = readExpression();
-      std::shared_ptr<ASTStatement> ret(nullptr);
+      std::shared_ptr<ASTExpression> ret(nullptr);
       nextToken = getToken();
       std::shared_ptr<ASTLeaf> cmpOp;
       switch (nextToken.tokentype) {
@@ -621,9 +621,9 @@ std::shared_ptr<ASTStatement> Parse::readCond() {
         case NE:
         case EQ:
         case LT:cmpOp = readCmpOp();
-          ret = std::make_shared<ASTStatement>(cmpOp->valueType, tmp, readExpression());
+          ret = std::make_shared<ASTExpression>(cmpOp->valueType, tmp, readExpression());
           break;
-        default:ret = std::make_shared<ASTStatement>(NE, tmp, std::make_shared<ASTLeaf>("0", UNSIGNED));
+        default:ret = std::make_shared<ASTExpression>(NE, tmp, std::make_shared<ASTLeaf>("0", UNSIGNED));
       }
       return ret;
     }

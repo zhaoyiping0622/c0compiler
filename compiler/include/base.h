@@ -14,7 +14,7 @@ class ASTDeclareValue;
 class ASTCondition;
 class ASTLoop;
 class ASTCall;
-class ASTStatement;
+class ASTExpression;
 class ASTLeaf;
 class ASTVector;
 class ASTRead;

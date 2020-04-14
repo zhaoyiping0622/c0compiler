@@ -55,11 +55,11 @@ class Parse {
   std::shared_ptr<AST> readAssign(std::string id = ""); // DONE
   std::shared_ptr<ASTCondition> readCondition(); // DONE
   std::shared_ptr<AST> readElse(); // DONE
-  std::shared_ptr<ASTStatement> readBoolean(); // DONE
-  std::shared_ptr<ASTStatement> readOr(); // DONE
-  std::shared_ptr<ASTStatement> readAnd(); // DONE
-  std::shared_ptr<ASTStatement> readNot(); // DONE
-  std::shared_ptr<ASTStatement> readCond(); // DONE
+  std::shared_ptr<ASTExpression> readBoolean(); // DONE
+  std::shared_ptr<ASTExpression> readOr(); // DONE
+  std::shared_ptr<ASTExpression> readAnd(); // DONE
+  std::shared_ptr<ASTExpression> readNot(); // DONE
+  std::shared_ptr<ASTExpression> readCond(); // DONE
   std::shared_ptr<AST> readLoop(); // DONE
   std::shared_ptr<AST> readSwitch(); // DONE
   std::shared_ptr<AST> readSwitch1(); // DONE

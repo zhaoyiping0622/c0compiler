@@ -18,21 +18,21 @@ ASTDeclareValue::ASTDeclareValue() {}
 ASTDeclareValue::ASTDeclareValue(bool isConst, Tokentype valueType, std::string valueId, std::string value)
     : ASTDeclare(valueId), isConst(isConst), valueType(valueType), value(value) {}
 ASTCondition::ASTCondition() {}
-ASTCondition::ASTCondition(std::shared_ptr<ASTStatement> cmp,
+ASTCondition::ASTCondition(std::shared_ptr<ASTExpression> cmp,
                            std::shared_ptr<AST> thenStatements,
                            std::shared_ptr<AST> elseStatements)
     : cmp(cmp), thenStatements(thenStatements), elseStatements(elseStatements) {}
 ASTLoop::ASTLoop() {}
-ASTLoop::ASTLoop(std::shared_ptr<ASTStatement> cmp, std::shared_ptr<AST> statements)
+ASTLoop::ASTLoop(std::shared_ptr<ASTExpression> cmp, std::shared_ptr<AST> statements)
     : cmp(cmp), body(statements) {}
 ASTCall::ASTCall() {}
 ASTCall::ASTCall(std::string funName, std::shared_ptr<AST> args)
     : funName(funName), args(args) {}
-ASTStatement::ASTStatement() {}
-ASTStatement::ASTStatement(Tokentype operatorType,
-                           std::shared_ptr<AST> statement1,
-                           std::shared_ptr<AST> statement2)
-    : operatorType(operatorType), statement1(statement1), statement2(statement2) {}
+ASTExpression::ASTExpression() {}
+ASTExpression::ASTExpression(Tokentype operatorType,
+                             std::shared_ptr<AST> statement1,
+                             std::shared_ptr<AST> statement2)
+    : operatorType(operatorType), expression1(statement1), expression2(statement2) {}
 ASTLeaf::ASTLeaf() {}
 ASTLeaf::ASTLeaf(std::string value, Tokentype tokentype) : value(value), valueType(tokentype) {}
 ASTRead::ASTRead() {}
@@ -52,6 +52,30 @@ ASTDeclareArray::ASTDeclareArray(int length,
 ASTDeclare::ASTDeclare() {}
 ASTDeclare::ASTDeclare(std::string valueId) : valueId(valueId) {}
 
+#define toJSONImplement(type) json toJSON(std::shared_ptr<type>p,bool root){\
+  if(p)return p->toJSON(root);\
+  return nullptr;\
+}
+
+#define to_jsonImplement(type) \
+void to_json(json&j,const std::shared_ptr<type> p){\
+  if(p)j=p->toJSON();\
+  else j=json(nullptr);\
+}
+
+#define makeArray \
+if (root) {\
+  json reallyRet;\
+  reallyRet[0] = ret;\
+  auto ne = next;\
+  int cnt = 1;\
+  while(ne) {\
+    reallyRet[cnt++] = ne;\
+    ne = ne->next;\
+  }\
+  ret = reallyRet;\
+}
+
 to_jsonImplement(AST)
 to_jsonImplement(ASTDeclare)
 to_jsonImplement(ASTDeclareFun)
@@ -60,14 +84,29 @@ to_jsonImplement(ASTDeclareArray)
 to_jsonImplement(ASTCondition)
 to_jsonImplement(ASTLoop)
 to_jsonImplement(ASTCall)
-to_jsonImplement(ASTStatement)
+to_jsonImplement(ASTExpression)
 to_jsonImplement(ASTLeaf)
 to_jsonImplement(ASTRead)
 to_jsonImplement(ASTWrite)
 to_jsonImplement(ASTRet)
 to_jsonImplement(ASTSwitch)
 
-json ASTDeclareFun::toJSON() {
+toJSONImplement(AST)
+toJSONImplement(ASTDeclare)
+toJSONImplement(ASTDeclareFun)
+toJSONImplement(ASTDeclareValue)
+toJSONImplement(ASTDeclareArray)
+toJSONImplement(ASTCondition)
+toJSONImplement(ASTLoop)
+toJSONImplement(ASTCall)
+toJSONImplement(ASTExpression)
+toJSONImplement(ASTLeaf)
+toJSONImplement(ASTRead)
+toJSONImplement(ASTWrite)
+toJSONImplement(ASTRet)
+toJSONImplement(ASTSwitch)
+
+json ASTDeclareFun::toJSON(bool root) {
   json ret;
   ret["name"] = "function declare";
   ret["returnType"] = toString(returnType);
@@ -80,109 +119,109 @@ json ASTDeclareFun::toJSON() {
           };
   else
     ret["args"] = nullptr;
-  ret["body"] = body;
+  ret["body"] = ::toJSON(body,true);
   ret["valueId"] = valueId;
-  ret["next"] = next;
+  makeArray;
   return ret;
 }
 
-json ASTDeclareValue::toJSON() {
+json ASTDeclareValue::toJSON(bool root) {
   json ret;
   ret["name"] = "value declare";
   ret["valueId"] = valueId;
   ret["const"] = isConst;
   ret["valueType"] = toString(valueType);
   ret["value"] = value;
-  ret["next"] = next;
+  makeArray;
   return ret;
 }
 
-json ASTDeclareArray::toJSON() {
+json ASTDeclareArray::toJSON(bool root) {
   json ret;
   ret["name"] = "array declare";
   ret["valueId"] = valueId;
   ret["length"] = length;
   ret["valueType"] = toString(valueType);
-  ret["next"] = next;
+  makeArray;
   return ret;
 }
 
-json ASTCondition::toJSON() {
+json ASTCondition::toJSON(bool root) {
   json ret;
   ret["name"] = "condition";
   ret["cmp"] = cmp;
-  ret["then"] = thenStatements;
-  ret["else"] = elseStatements;
-  ret["next"] = next;
+  ret["then"] = ::toJSON(thenStatements,true);
+  ret["else"] = ::toJSON(elseStatements,true);
+  makeArray;
   return ret;
 }
 
-json ASTLoop::toJSON() {
+json ASTLoop::toJSON(bool root) {
   json ret;
   ret["name"] = "loop";
   ret["cmp"] = cmp;
-  ret["body"] = body;
-  ret["next"] = next;
+  ret["body"] = ::toJSON(body,true);
+  makeArray;
   return ret;
 }
 
-json ASTCall::toJSON() {
+json ASTCall::toJSON(bool root) {
   json ret;
   ret["name"] = "call";
   ret["funName"] = funName;
-  ret["args"] = args;
-  ret["next"] = next;
+  ret["args"] = ::toJSON(args,true);
+  makeArray;
   return ret;
 }
 
-json ASTStatement::toJSON() {
+json ASTExpression::toJSON(bool root) {
   json ret;
-  ret["name"] = "statement";
+  ret["name"] = "expression";
   ret["operatorType"] = toString(operatorType);
-  ret["statement1"] = statement1;
-  ret["statement2"] = statement2;
-  ret["next"] = next;
+  ret["expression1"] = expression1;
+  ret["expression2"] = expression2;
+  makeArray;
   return ret;
 }
 
-json ASTLeaf::toJSON() {
+json ASTLeaf::toJSON(bool root) {
   json ret;
   ret["name"] = "leaf";
   ret["value"] = value;
   ret["valueType"] = toString(valueType);
-  ret["next"] = next;
+  makeArray;
   return ret;
 }
 
-json ASTRead::toJSON() {
+json ASTRead::toJSON(bool root) {
   json ret;
   ret["name"] = "read";
-  ret["args"] = args;
-  ret["next"] = next;
+  ret["args"] = ::toJSON(args,true);
+  makeArray;
   return ret;
 }
 
-json ASTWrite::toJSON() {
+json ASTWrite::toJSON(bool root) {
   json ret;
   ret["name"] = "write";
-  ret["args"] = args;
-  ret["next"] = next;
+  ret["args"] = ::toJSON(args,true);
+  makeArray;
   return ret;
 }
 
-json ASTRet::toJSON() {
+json ASTRet::toJSON(bool root) {
   json ret;
   ret["name"] = "ret";
   ret["value"] = value;
-  ret["next"] = next;
+  makeArray;
   return ret;
 }
 
-json ASTSwitch::toJSON() {
+json ASTSwitch::toJSON(bool root) {
   json ret;
   ret["name"] = "switch";
-  ret["cases"] = cases;
+  ret["cases"] = ::toJSON(cases,true);
   ret["expression"] = expression;
-  ret["next"] = next;
+  makeArray;
   return ret;
 }

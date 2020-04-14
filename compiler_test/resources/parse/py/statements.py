@@ -23,7 +23,7 @@ lines.append(ASTCall(funName="a"))
 lines.append(aASSIGNaplusb.copy())
 lines.append(ASTRead(args=a.copy(b.copy(c))))
 lines.append(ASTWrite(args=string1.copy(char1.copy(num1.copy(c)))))
-lines.append(ASTStatement(operatorType="UNDEFINED"))
+lines.append(ASTExpression(operatorType="UNDEFINED"))
 lines.append(ASTSwitch(expression=a))
 lines.append(ASTRet(value=a))
 

@@ -1,4 +1,5 @@
 from json import dumps
+
 if __name__ == "__main__":
     from AST.AST import *
 else:
@@ -6,5 +7,5 @@ else:
 
 a = ASTLeaf(value="a", valueType="ID")
 b = ASTLeaf(value="b", valueType="ID")
-c = ASTStatement(operatorType="ADD", statement1=a, statement2=b)
-print(dumps(c.toJSON()).replace("None", "null"))
+c = ASTExpression(operatorType="ADD", expression1=a, expression2=b)
+printLines([c])

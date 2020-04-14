@@ -103,7 +103,8 @@ class ParseTest : public Parse, public testing::Test {
 TEST_F(ParseTest,filename){\
   setTokenizer(#filename);\
   json j = getSTDJSON(#filename);\
-  json j2 = read();\
+  json j2 = toJSON(read(),true);\
+  ASSERT_EQ(j.dump(), j2.dump()) << j.dump(1) << std::endl << j2.dump(1) << std::endl;\
   ASSERT_EQ(j, j2) << j << std::endl << j2 << std::endl;\
 }
 
@@ -118,13 +119,13 @@ TEST_F(ParseTest,filename){\
     if (ret) {tail = getTail(tail); tail->next = read();}\
     else tail = ret = read();\
   }\
-  j2 = ret;\
-  ASSERT_EQ(jstd.dump(0), j2.dump(0)) << jstd.dump(1) << std::endl << j2.dump(1) << std::endl;\
+  j2 = toJSON(ret, true);\
+  ASSERT_EQ(jstd.dump(), j2.dump()) << jstd.dump(1) << std::endl << j2.dump(1) << std::endl;\
   ASSERT_EQ(jstd, j2) << jstd << std::endl << j2 << std::endl;\
 }
 
-PARSESINGLETEST(aplusb, readExpression)
-PARSESINGLETEST(constDeclare, readConstDeclare)
+PARSESINGLETEST (aplusb, readExpression)
+PARSESINGLETEST (constDeclare, readConstDeclare)
 PARSESINGLETEST (compoundStatements1, readCompound_statements)
 PARSESINGLETEST (compoundStatements2, readCompound_statements)
 PARSESINGLETEST (compoundStatements3, readCompound_statements)
