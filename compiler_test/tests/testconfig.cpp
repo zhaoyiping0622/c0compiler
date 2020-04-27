@@ -130,6 +130,6 @@ TEST_F(ConfigTest, output) {
   config.output();
   std::string output = testing::internal::GetCapturedStderr();
   ASSERT_EQ(output, "inputFileName " + config.inputFileName + "\n" +
-                        "outputFileName " + config.outputFileName + "\n" +
-                        "debug " + std::to_string(config.debug) + "\n");
+      "outputFileName " + config.outputFileName + "\n" +
+      "debug " + std::to_string(config.debug) + "\n");
 }

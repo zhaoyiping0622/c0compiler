@@ -8,23 +8,31 @@
 #include "base.h"
 #include "memory"
 #include "scan.h"
-#include "stack"
 #include "token.h"
-#include "unordered_map"
 #include "vector"
-#include "cstdarg"
 
-void parseError(const char *errorMessage);
+//void parseError(const char *errorMessage);
+class ParseError : public BaseError {
+ public:
+  std::vector<Tokentype> expectToken;
+  void parseOperation();
+  ParseError(std::vector<Tokentype> v, Tokentype errorToken);
+  ParseError();
+  ParseError(std::string errorMessage);
+  const char *what() const noexcept;
+};
 
 class Parse {
  public:
   Parse(std::shared_ptr<Tokenizer> tokenlizer);
   Parse();
+  std::shared_ptr<AST> run();
  protected:
   std::shared_ptr<AST> getTail(std::shared_ptr<AST> now);
   std::shared_ptr<Tokenizer> tokenizer;
   std::shared_ptr<AST> root;
   void init();
+  void initSymbolTable();
   void parse();
   Token getToken();
   Token popToken();
@@ -80,5 +88,8 @@ class Parse {
   void parseErrorUnexpectedToken(int num, ...);
   void parseErrorUnexpectedToken(const char *);
 };
+
+void parseErrorRedefinition(const std::string errorMessage);
+void parseError(const std::string errorMessage);
 
 #endif //COMPILER_COMPILER_INCLUDE_PARSE_H_

@@ -3,9 +3,10 @@
 //
 
 #include "parse.h"
+#include "cstdarg"
 void parseError(const char *errorMessage) {
   std::string em = "Parse Error: " + (std::string)errorMessage;
-  error(em.c_str());
+  throw ParseError(em.c_str());
 }
 Parse::Parse(std::shared_ptr<Tokenizer> tokenlizer) : tokenizer(tokenlizer) {
   nextToken = tokenlizer->getToken();
@@ -22,7 +23,7 @@ Token Parse::popToken() {
   return ret;
 }
 void Parse::parseErrorUnexpectedToken(const char *s) {
-  parseError(((std::string)"expected " + s + " read " + toString(getToken().tokentype)).c_str());
+  throw ParseError((std::string)"expected " + s + " read " + toString(getToken().tokentype));
 }
 // DONE
 std::shared_ptr<ASTLeaf> Parse::readAddOp() {
@@ -838,12 +839,46 @@ std::shared_ptr<AST> Parse::getTail(std::shared_ptr<AST> now) {
 void Parse::parseErrorUnexpectedToken(int num, ...) {
   va_list va_l;
   std::string s;
+  std::vector<Tokentype> expectToken;
   Tokentype tokentype;
   va_start(va_l, num);
-  tokentype = (Tokentype)va_arg(va_l, int);
-  s = toString(tokentype);
-  for (int i = 1; i < num; i++)s += " or " + toString((Tokentype)va_arg(va_l, int));
+  for (int i = 0; i < num; i++)
+    expectToken.emplace_back((Tokentype)va_arg(va_l, int));
   va_end(va_l);
-  parseErrorUnexpectedToken(s.c_str());
+  throw ParseError(expectToken, getToken().tokentype);
 }
 Parse::Parse() {}
+void Parse::initSymbolTable() {
+  for (auto now = root; now; now = now->next) {
+    // the program is made up of declares
+    now->initSymbolTable();
+  }
+}
+std::shared_ptr<AST> Parse::run() {
+  root = readProgram();
+  initSymbolTable();
+  return root;
+}
+void ParseError::parseOperation() {
+  baseOperation();
+}
+ParseError::ParseError(std::vector<Tokentype> v, Tokentype errorType) {
+  expectToken = v;
+  errorMessage = "PARSE ERROR: expect";
+  for (auto x:v)errorMessage += " " + toString(x);
+  errorMessage += "\n";
+  errorMessage += "read " + toString(errorType);
+}
+ParseError::ParseError() {}
+ParseError::ParseError(std::string errorMessage) : BaseError(errorMessage) {
+  errorMessage = "PARSE ERROR: " + errorMessage;
+}
+const char *ParseError::what() const noexcept {
+  return errorMessage.c_str();
+}
+void parseErrorRedefinition(const std::string errorMessage) {
+  parseError("redefinition error: " + errorMessage);
+}
+void parseError(const std::string errorMessage) {
+  throw ParseError(errorMessage);
+}

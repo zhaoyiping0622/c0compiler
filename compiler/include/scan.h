@@ -10,14 +10,19 @@
 #include "memory"
 #include "base.h"
 #include "config.h"
-#include "symbol.h"
 #include "token.h"
 
 #define SCANBUFSIZE 2048
 #define STATENUM 38
 
-void scanError(const char *errorMessage);
+class ScanError : public BaseError {
+ public:
+  ScanError(std::string errorMessage);
+  void ScanOperation();
+  const char *what() const noexcept;
+};
 
+void scanError(const char *errorMessage);
 class State {
  public:
   bool terminate;

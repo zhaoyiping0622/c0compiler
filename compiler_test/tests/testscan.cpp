@@ -113,10 +113,10 @@ class ScanDeathTest : public ScanTest {
           break;
         std::istringstream input(s);
         while (s.size() && isspace(s.back()))s.pop_back();
-        ASSERT_DEATH(run(input), errorMessage);
+        ASSERT_THROW(run(input), ScanError);
       }
     } else {
-      ASSERT_DEATH(run(f), errorMessage);
+      ASSERT_THROW(run(f), ScanError);
     }
   }
 };

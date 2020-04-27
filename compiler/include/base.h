@@ -16,7 +16,6 @@ class ASTLoop;
 class ASTCall;
 class ASTExpression;
 class ASTLeaf;
-class ASTVector;
 class ASTRead;
 class ASTWrite;
 class ASTRet;
@@ -29,15 +28,22 @@ class Config;
 // parse.h
 
 class Parse;
+class ParseError;
 
 // scan.h
 
 class State;
 class Scan;
+class ScanError;
 
 // symbol.h
 
 class Symbol;
+class SymbolValue;
+class SymbolArray;
+class SymbolFunction;
+class SymbolTable;
+
 
 // token.h
 
@@ -47,7 +53,17 @@ typedef enum emTokentype Tokentype;
 class Tokenizer;
 std::string toString(Tokentype);
 
+class BaseError : public std::exception {
+ public:
+  BaseError();
+  BaseError(std::string);
+  std::string errorMessage;
+  void baseOperation();
+  virtual ~BaseError();
+};
+
 // other function
 void error(const char *errorMessage);
+int realValue(std::string s);
 
 #endif //COMPILER_COMPILER_INCLUDE_BASE_H_
