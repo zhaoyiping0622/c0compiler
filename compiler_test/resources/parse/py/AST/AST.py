@@ -1,9 +1,34 @@
-def toJSON(x):
+def makeArray(fun):
+    def decorated(self, *args, **kwargs):
+        if "root" in kwargs and kwargs["root"]:
+            next = self.next  # type: AST
+            self.dic = [self.toJSON()]
+            while next is not None:
+                self.dic.append(next.toJSON())
+                next = next.next
+            return self.dic
+        else:
+            self.dic = {}
+            return fun(self, *args, **kwargs)
+
+    return decorated
+
+def returnSelf(fun):
+    def decorated(self,*args,**kwargs):
+        ret= fun(self, *args, **kwargs)
+        if ret:
+            return ret
+        else:
+            return self
+    return decorated
+
+
+def toJSON(x, root=False):
     if x is None:
         return None
     if type(x) is str:
         return x
-    return x.toJSON()
+    return x.toJSON(root=root)
 
 
 class AST:
@@ -22,6 +47,7 @@ class AST:
         a.next = next
         return ret
 
+    @returnSelf
     def setnext(self, next):
         AST.__init__(self, next=next)
 
@@ -29,12 +55,9 @@ class AST:
         from json import dumps
         print(dumps(toJSON(self)))
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         self.dic["name"] = self.name
-        if self.next:
-            self.dic["next"] = toJSON(self.next)
-        else:
-            self.dic["next"] = None
         return self.dic
 
 
@@ -44,9 +67,11 @@ class ASTDeclare(AST):
         AST.__init__(self, next=next, name=name)
         self.valueId = valueId
 
+    @returnSelf
     def setvalueId(self, valueId): self.valueId = valueId
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["valueId"] = self.valueId
         return self.dic
@@ -60,23 +85,27 @@ class ASTDeclareFun(ASTDeclare):
         self.body = body
         self.returnType = returnType
 
+    @returnSelf
     def setreturnType(self, returnType):
         self.returnType = returnType
 
+    @returnSelf
     def setargs(self, args):
         self.args = args
 
+    @returnSelf
     def setbody(self, body):
         self.body = body
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         if self.args:
             self.dic["args"] = [{"valueType": x[0], "valueId": x[1]} for x in self.args]
         else:
             self.dic["args"] = None
         self.dic["returnType"] = self.returnType
-        self.dic["body"] = toJSON(self.body)
+        self.dic["body"] = toJSON(self.body, True)
         return self.dic
 
 
@@ -88,13 +117,17 @@ class ASTDeclareValue(ASTDeclare):
         self.valueType = valueType
         self.value = value
 
+    @returnSelf
     def setisConst(self, isConst): self.isConst = isConst
 
+    @returnSelf
     def setvalueType(self, valueType): self.valueType = valueType
 
+    @returnSelf
     def setvalue(self, value): self.value = value
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["const"] = self.isConst
         self.dic["valueType"] = self.valueType
@@ -104,16 +137,19 @@ class ASTDeclareValue(ASTDeclare):
 
 class ASTDeclareArray(ASTDeclare):
 
-    def __init__(self, next=None, valueId=None, length=None, valueType=None):
+    def __init__(self, next=None, valueId=None, length=8, valueType=None):
         ASTDeclare.__init__(self, next=next, valueId=valueId, name="array declare")
         self.length = length
         self.valueType = valueType
 
+    @returnSelf
     def setlength(self, length): self.length = length
 
+    @returnSelf
     def setvalueType(self, valueType): self.valueType = valueType
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["length"] = self.length
         self.dic["valueType"] = self.valueType
@@ -128,17 +164,21 @@ class ASTCondition(AST):
         self.thenStatements = thenStatements
         self.elseStatements = elseStatements
 
+    @returnSelf
     def setcmp(self, cmp): self.cmp = cmp
 
+    @returnSelf
     def setthenStatements(self, thenStatements): self.thenStatements = thenStatements
 
+    @returnSelf
     def setelseStatements(self, elseStatements): self.elseStatements = elseStatements
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["cmp"] = toJSON(self.cmp)
-        self.dic["then"] = toJSON(self.thenStatements)
-        self.dic["else"] = toJSON(self.elseStatements)
+        self.dic["then"] = toJSON(self.thenStatements, root=True)
+        self.dic["else"] = toJSON(self.elseStatements, root=True)
         return self.dic
 
 
@@ -149,14 +189,17 @@ class ASTLoop(AST):
         self.cmp = cmp
         self.body = body
 
+    @returnSelf
     def setcmp(self, cmp): self.cmp = cmp
 
+    @returnSelf
     def setbody(self, body): self.body = body
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["cmp"] = toJSON(self.cmp)
-        self.dic["body"] = toJSON(self.body)
+        self.dic["body"] = toJSON(self.body, root=True)
         return self.dic
 
 
@@ -167,36 +210,43 @@ class ASTCall(AST):
         self.funName = funName
         self.args = args
 
+    @returnSelf
     def setfunName(self, funName): self.funName = funName
 
+    @returnSelf
     def setargs(self, args): self.args = args
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["funName"] = toJSON(self.funName)
-        self.dic["args"] = toJSON(self.args)
+        self.dic["args"] = toJSON(self.args, root=True)
         return self.dic
 
 
-class ASTStatement(AST):
+class ASTExpression(AST):
 
-    def __init__(self, next=None, operatorType=None, statement1=None, statement2=None):
-        AST.__init__(self, next=next, name="statement")
+    def __init__(self, next=None, operatorType=None, expression1=None, expression2=None):
+        AST.__init__(self, next=next, name="expression")
         self.operatorType = operatorType
-        self.statement1 = statement1
-        self.statement2 = statement2
+        self.expression1 = expression1
+        self.expression2 = expression2
 
+    @returnSelf
     def setoperatorType(self, operatorType): self.operatorType = operatorType
 
-    def setstatement1(self, statement1): self.statement1 = statement1
+    @returnSelf
+    def setexpression1(self, expression1): self.expression1 = expression1
 
-    def setstatement2(self, statement2): self.statement2 = statement2
+    @returnSelf
+    def setexpression2(self, expression2): self.expression2 = expression2
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["operatorType"] = self.operatorType
-        self.dic["statement1"] = toJSON(self.statement1)
-        self.dic["statement2"] = toJSON(self.statement2)
+        self.dic["expression1"] = toJSON(self.expression1)
+        self.dic["expression2"] = toJSON(self.expression2)
         return self.dic
 
 
@@ -207,11 +257,14 @@ class ASTLeaf(AST):
         self.value = value
         self.valueType = valueType
 
+    @returnSelf
     def setvalue(self, value): self.value = value
 
+    @returnSelf
     def setvalueType(self, valueType): self.valueType = valueType
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["value"] = self.value
         self.dic["valueType"] = self.valueType
@@ -224,11 +277,13 @@ class ASTRead(AST):
         AST.__init__(self, next=next, name="read")
         self.args = args
 
+    @returnSelf
     def setargs(self, args): self.args = args
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
-        self.dic["args"] = toJSON(self.args)
+        self.dic["args"] = toJSON(self.args, True)
         return self.dic
 
 
@@ -238,11 +293,13 @@ class ASTWrite(AST):
         AST.__init__(self, next=next, name="write")
         self.args = args
 
+    @returnSelf
     def setargs(self, args): self.args = args
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
-        self.dic["args"] = toJSON(self.args)
+        self.dic["args"] = toJSON(self.args, True)
         return self.dic
 
 
@@ -252,9 +309,11 @@ class ASTRet(AST):
         AST.__init__(self, next=next, name="ret")
         self.value = value
 
+    @returnSelf
     def setvalue(self, value): self.value = value
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["value"] = toJSON(self.value)
         return self.dic
@@ -267,39 +326,45 @@ class ASTSwitch(AST):
         self.expression = expression
         self.cases = cases
 
-    def toJSON(self):
+    @makeArray
+    def toJSON(self, root=False):
         super().toJSON()
         self.dic["expression"] = toJSON(self.expression)
-        self.dic["cases"] = toJSON(self.cases)
+        self.dic["cases"] = toJSON(self.cases, True)
         return self.dic
 
 
 a = ASTLeaf(value="a", valueType="ID")
 b = ASTLeaf(value="b", valueType="ID")
 c = ASTLeaf(value="c", valueType="ID")
+d = ASTLeaf(value="d", valueType="ID")
 num1 = ASTLeaf(value="1", valueType="UNSIGNED")
 num0 = ASTLeaf(value="0", valueType="UNSIGNED")
-numf1 = ASTStatement(operatorType="MINUS", statement1=num1)
+numf1 = ASTExpression(operatorType="MINUS", expression1=num1)
 char1 = ASTLeaf(value="'1'", valueType="CHARACTER")
 char0 = ASTLeaf(value="'0'", valueType="CHARACTER")
-charf1 = ASTStatement(operatorType="MINUS", statement1=char1)
+charf1 = ASTExpression(operatorType="MINUS", expression1=char1)
 string1 = ASTLeaf(value='"1"', valueType="STRING")
-aplusb = ASTStatement(operatorType="ADD", statement1=a, statement2=b)
-aminusb = ASTStatement(operatorType="MINUS", statement1=a, statement2=b)
-amulb = ASTStatement(operatorType="MUL", statement1=a, statement2=b)
-oneaddone = ASTStatement(operatorType="ADD", statement1=num1, statement2=num1)
-Aarray1 = ASTStatement(operatorType="ARRAY", statement1=a, statement2=num1)
-Aarrayaplusb = ASTStatement(operatorType="ARRAY", statement1=a, statement2=aplusb)
-bmulc = ASTStatement(operatorType="MUL", statement1=b, statement2=c)
-Aarrayb = ASTStatement(operatorType="ARRAY", statement1=a, statement2=b)
-aNE0 = ASTStatement(operatorType="NE", statement1=a, statement2=num0)
-aEQ0 = ASTStatement(operatorType="EQ", statement1=a, statement2=num0)
-bNE0 = ASTStatement(operatorType="NE", statement1=b, statement2=num0)
-bEQ0 = ASTStatement(operatorType="EQ", statement1=b, statement2=num0)
-aLTb = ASTStatement(operatorType="LT", statement1=a, statement2=b)
-aGTb = ASTStatement(operatorType="GT", statement1=a, statement2=b)
-aASSIGNaplusb = ASTStatement(operatorType="ASSIGN", statement1=a, statement2=aplusb)
-bASSIGNaplusb = ASTStatement(operatorType="ASSIGN", statement1=b, statement2=aplusb)
+aplusb = ASTExpression(operatorType="ADD", expression1=a, expression2=b)
+cplusd = ASTExpression(operatorType="ADD", expression1=c, expression2=d)
+aminusb = ASTExpression(operatorType="MINUS", expression1=a, expression2=b)
+amulb = ASTExpression(operatorType="MUL", expression1=a, expression2=b)
+oneaddone = ASTExpression(operatorType="ADD", expression1=num1, expression2=num1)
+Aarray1 = ASTExpression(operatorType="ARRAY", expression1=a, expression2=num1)
+Aarrayaplusb = ASTExpression(operatorType="ARRAY", expression1=a, expression2=aplusb)
+bmulc = ASTExpression(operatorType="MUL", expression1=b, expression2=c)
+Aarrayb = ASTExpression(operatorType="ARRAY", expression1=a, expression2=b)
+aNE0 = ASTExpression(operatorType="NE", expression1=a, expression2=num0)
+aEQ0 = ASTExpression(operatorType="EQ", expression1=a, expression2=num0)
+bNE0 = ASTExpression(operatorType="NE", expression1=b, expression2=num0)
+bEQ0 = ASTExpression(operatorType="EQ", expression1=b, expression2=num0)
+aLTb = ASTExpression(operatorType="LT", expression1=a, expression2=b)
+aGTb = ASTExpression(operatorType="GT", expression1=a, expression2=b)
+aASSIGNaplusb = ASTExpression(operatorType="ASSIGN", expression1=a, expression2=aplusb)
+bASSIGNaplusb = ASTExpression(operatorType="ASSIGN", expression1=b, expression2=aplusb)
+UNDEFINED=ASTLeaf(value="0",valueType="UNDEFINED")
+cLTd = ASTExpression(operatorType="LT", expression1=c, expression2=d)
+cGTd = ASTExpression(operatorType="GT", expression1=c, expression2=d)
 
 
 def joinLines(lines: list):
@@ -315,7 +380,7 @@ def joinLines(lines: list):
 def printLines(lines: list):
     from json import dumps
     lines = joinLines(lines)
-    print(dumps(lines[0].toJSON()).replace("None", "null"))
+    print(dumps(lines[0].toJSON(root=True)).replace("None", "null"))
 
 
 if __name__ == "__main__":

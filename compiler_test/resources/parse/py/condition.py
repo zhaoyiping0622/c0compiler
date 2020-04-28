@@ -3,7 +3,7 @@ if __name__ == "__main__":
 else:
     from .AST.AST import *
 
-lines=[]
+lines = []
 lines.append(
     ASTCondition(
         cmp=aLTb,
@@ -21,10 +21,10 @@ lines.append(
     ASTCondition(
         cmp=aLTb,
         thenStatements=ASTCondition(
-            cmp=ASTStatement(
+            cmp=ASTExpression(
                 operatorType="EQ",
-                statement1=aplusb,
-                statement2=num0
+                expression1=aplusb,
+                expression2=num0
             ),
             thenStatements=aASSIGNaplusb,
             elseStatements=bASSIGNaplusb

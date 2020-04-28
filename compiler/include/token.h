@@ -7,7 +7,6 @@
 #include "string"
 #include "iostream"
 #include "base.h"
-#include "symbol.h"
 #include "unordered_map"
 
 enum emTokentype : int {
@@ -54,7 +53,10 @@ enum emTokentype : int {
   ELSE,
   EOFTOKEN,
   UNDEFINED,
-  ARRAY
+  ARRAY,
+  VALUE,
+  FUNCTION,
+  BOOL
 };
 
 std::string toString(Tokentype);
@@ -70,7 +72,9 @@ class Token {
 class Tokenizer {
  public:
   virtual Token getToken() = 0;
-  std::unordered_map<std::string, Symbol> symbolTable;
+  std::unordered_map<std::string, Tokentype> keywords;
 };
+
+Tokentype toTokenType(std::string s);
 
 #endif //COMPILER_COMPILER_INCLUDE_TOKEN_H_

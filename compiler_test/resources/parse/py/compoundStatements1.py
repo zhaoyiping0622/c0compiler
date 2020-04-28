@@ -86,13 +86,13 @@ lines.append(
 lines.append(
     ASTLoop(
         cmp=aNE0,
-        body=ASTStatement(
+        body=ASTExpression(
             operatorType="ASSIGN",
-            statement1=a,
-            statement2=ASTStatement(
+            expression1=a,
+            expression2=ASTExpression(
                 operatorType="ADD",
-                statement1=a,
-                statement2=ASTCall(funName="b")
+                expression1=a,
+                expression2=ASTCall(funName="b")
             )
         )
     )

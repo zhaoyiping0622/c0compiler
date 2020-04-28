@@ -7,7 +7,7 @@ lines = []
 lines.append(
     ASTSwitch(
         expression=a,
-        cases=ASTStatement(
+        cases=ASTExpression(
             operatorType="UNDEFINED",
             next=num1.copy(
                 next=aASSIGNaplusb.copy(
@@ -34,7 +34,7 @@ lines.append(
 lines.append(
     ASTSwitch(
         expression=a,
-        cases=ASTStatement(operatorType="UNDEFINED")
+        cases=ASTExpression(operatorType="UNDEFINED")
     )
 )
 lines.append(

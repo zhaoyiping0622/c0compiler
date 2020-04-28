@@ -16,7 +16,6 @@ TEST(ASTTestJSON, DeclareFunNoArg) {
   j["args"] = nullptr;
   j["body"] = nullptr;
   j["valueId"] = "test";
-  j["next"] = nullptr;
   json j2 = ast;
   ASSERT_EQ(j, j2);
 }
@@ -34,7 +33,6 @@ TEST(ASTTestJSON, DeclareFun1Arg) {
   j["args"][0] = {{"valueType", toString(INT)}, {"valueId", "abc"}};
   j["body"] = nullptr;
   j["valueId"] = "test";
-  j["next"] = nullptr;
   json j2 = ast;
   ASSERT_EQ(j, j2);
 }
@@ -53,7 +51,6 @@ TEST(ASTTestJSON, DeclareFunManyArg) {
   j["args"][1] = {{"valueType", toString(CHAR)}, {"valueId", "def"}};
   j["body"] = nullptr;
   j["valueId"] = "test";
-  j["next"] = nullptr;
   json j2 = ast;
   ASSERT_EQ(j, j2);
   j["args"][1] = {{"valueType", toString(INT)}, {"valueId", "abc"}};
@@ -69,7 +66,6 @@ TEST(ASTTestJSON, DeclareValueINT) {
   j["const"] = true;
   j["valueType"] = toString(INT);
   j["value"] = "123";
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, DeclareValueCHAR) {
@@ -81,7 +77,6 @@ TEST(ASTTestJSON, DeclareValueCHAR) {
   j["const"] = true;
   j["valueType"] = toString(CHAR);
   j["value"] = "\\\'";
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, DeclareArray) {
@@ -92,7 +87,6 @@ TEST(ASTTestJSON, DeclareArray) {
   j["valueId"] = "abc";
   j["length"] = 10;
   j["valueType"] = toString(INT);
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Condition) {
@@ -102,7 +96,6 @@ TEST(ASTTestJSON, Condition) {
   j["cmp"] = nullptr;
   j["then"] = nullptr;
   j["else"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Loop) {
@@ -111,7 +104,6 @@ TEST(ASTTestJSON, Loop) {
   j["name"] = "loop";
   j["cmp"] = nullptr;
   j["body"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Call) {
@@ -120,17 +112,15 @@ TEST(ASTTestJSON, Call) {
   j["name"] = "call";
   j["funName"] = "test";
   j["args"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Statement) {
-  auto ast = std::make_shared<ASTStatement>(ADD, nullptr, nullptr);
+  auto ast = std::make_shared<ASTExpression>(ADD, nullptr, nullptr);
   json j;
-  j["name"] = "statement";
+  j["name"] = "expression";
   j["operatorType"] = toString(ADD);
-  j["statement1"] = nullptr;
-  j["statement2"] = nullptr;
-  j["next"] = nullptr;
+  j["expression1"] = nullptr;
+  j["expression2"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Leaf) {
@@ -139,7 +129,6 @@ TEST(ASTTestJSON, Leaf) {
   j["name"] = "leaf";
   j["value"] = "abc";
   j["valueType"] = toString(INT);
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Read) {
@@ -147,7 +136,6 @@ TEST(ASTTestJSON, Read) {
   json j;
   j["name"] = "read";
   j["args"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Write) {
@@ -155,7 +143,6 @@ TEST(ASTTestJSON, Write) {
   json j;
   j["name"] = "write";
   j["args"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Ret) {
@@ -163,7 +150,6 @@ TEST(ASTTestJSON, Ret) {
   json j;
   j["name"] = "ret";
   j["value"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
 TEST(ASTTestJSON, Switch) {
@@ -172,6 +158,150 @@ TEST(ASTTestJSON, Switch) {
   j["name"] = "switch";
   j["cases"] = nullptr;
   j["expression"] = nullptr;
-  j["next"] = nullptr;
   ASSERT_EQ(j, ast->toJSON());
 }
+
+void testASTEqual(std::shared_ptr<AST> a) {
+  json j = a->toJSON();
+  json j1 = toAST(AST)(a)->toJSON();
+  ASSERT_EQ(j.dump(2), j1.dump(2));
+}
+
+TEST(ASTTestJSON, ASTDeclareFun) {
+  auto root = std::make_shared<ASTDeclareFun>(VOID, std::vector<std::pair<Tokentype, std::string>>(), nullptr, "fun");
+  testASTEqual(root);
+  auto body = std::make_shared<ASTDeclareValue>(false, INT, "ABC", "123");
+  std::shared_ptr<AST> tail = body;
+  tail = tail->next = std::make_shared<ASTDeclareArray>(10, INT, "ABC");
+  auto args1 = std::vector<std::pair<Tokentype, std::string>>(
+      {
+          {INT, "a"},
+      });
+  auto args2 = std::vector<std::pair<Tokentype, std::string>>(
+      {
+          {INT, "a"},
+          {CHAR, "b"}
+      });
+  auto args3 = std::vector<std::pair<Tokentype, std::string>>(
+      {
+          {INT, "a"},
+          {CHAR, "b"},
+          {INT, "c"},
+      });
+  root = std::make_shared<ASTDeclareFun>(VOID, args1, tail, "fun");
+  testASTEqual(root);
+  root = std::make_shared<ASTDeclareFun>(INT, args2, body, "abc");
+  testASTEqual(root);
+  root = std::make_shared<ASTDeclareFun>(CHAR, args3, body, "cde");
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTDeclareValue) {
+  auto root = std::make_shared<ASTDeclareValue>(false, INT, "abc", "123");
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTDeclareArray) {
+  auto root = std::make_shared<ASTDeclareArray>(10, INT, "ABC");
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTDeclare) {
+  auto fun = std::make_shared<ASTDeclareFun>(VOID, std::vector<std::pair<Tokentype, std::string>>(), nullptr, "fun");
+  auto value = std::make_shared<ASTDeclareValue>(false, INT, "abc", "123");
+  auto array = std::make_shared<ASTDeclareArray>(10, INT, "ABC");
+  testASTEqual(fun);
+  testASTEqual(value);
+  testASTEqual(array);
+}
+TEST(ASTTestJSON, ASTCondition) {
+  auto root = std::make_shared<ASTCondition>();
+  testASTEqual(root);
+  auto expression = std::make_shared<ASTExpression>(
+      ADD,
+      std::make_shared<ASTLeaf>("1", INT),
+      std::make_shared<ASTLeaf>("'1'", CHAR)
+  );
+  root = std::make_shared<ASTCondition>(expression, expression, expression);
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTLoop) {
+  auto root = std::make_shared<ASTLoop>();
+  auto expression = std::make_shared<ASTExpression>(
+      ADD,
+      std::make_shared<ASTLeaf>("1", INT),
+      std::make_shared<ASTLeaf>("'1'", CHAR)
+  );
+  testASTEqual(root);
+  root = std::make_shared<ASTLoop>(expression, expression);
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTCall) {
+  auto arg1 = std::make_shared<ASTLeaf>("a", INT);
+  auto arg2 = std::make_shared<ASTLeaf>("b", CHAR);
+  auto arg3 = std::make_shared<ASTLeaf>("c", INT);
+  arg1->next = arg2;
+  arg2->next = arg3;
+  auto root = std::make_shared<ASTCall>("abc", arg1);
+  testASTEqual(root);
+  root->args = arg2;
+  testASTEqual(root);
+  root->args = arg3;
+  testASTEqual(root);
+  root->args = nullptr;
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTExpression) {
+  auto root = std::make_shared<ASTExpression>
+      (OR,
+       std::make_shared<ASTLeaf>("1", INT),
+       std::make_shared<ASTLeaf>("'1'", CHAR));
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTLeaf) {
+  auto root = std::make_shared<ASTLeaf>("123", INT);
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTRead) {
+  auto arg1 = std::make_shared<ASTLeaf>("a", ID);
+  auto arg2 = std::make_shared<ASTLeaf>("b", ID);
+  auto arg3 = std::make_shared<ASTLeaf>("c", ID);
+  arg1->next = arg2;
+  arg2->next = arg3;
+  auto root = std::make_shared<ASTRead>(arg1);
+  testASTEqual(root);
+  root->args = arg2;
+  testASTEqual(root);
+  root->args = arg3;
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTWrite) {
+  auto arg1 = std::make_shared<ASTLeaf>("abcdef", STRING);
+  auto arg2 = std::make_shared<ASTLeaf>("123", INT);
+  auto arg3 = std::make_shared<ASTExpression>(ADD, arg1, arg2);
+  arg1->next = arg2;
+  arg2->next = arg3;
+  auto root = std::make_shared<ASTWrite>(arg1);
+  testASTEqual(root);
+  root->args = arg2;
+  testASTEqual(root);
+  root->args = arg3;
+  testASTEqual(root);
+}
+TEST(ASTTestJSON, ASTRet) {
+  auto arg1 = std::make_shared<ASTLeaf>("1", INT);
+  auto arg2 = std::make_shared<ASTLeaf>("'1'", CHAR);
+  auto arg3 = std::make_shared<ASTExpression>(ADD, arg1, arg2);
+  testASTEqual(std::make_shared<ASTRet>(arg1));
+  testASTEqual(std::make_shared<ASTRet>(arg2));
+  testASTEqual(std::make_shared<ASTRet>(arg3));
+}
+TEST(ASTTestJSON, ASTSwitch) {
+  auto arg1 = std::make_shared<ASTLeaf>("123", UNSIGNED);
+  auto arg2 = std::make_shared<ASTLeaf>("'1'", CHARACTER);
+  auto arg3 = std::make_shared<ASTExpression>(MINUS, arg1, nullptr);
+  auto aplusb = std::make_shared<ASTExpression>(ADD, arg1, arg2);
+  auto Default = aplusb;
+  testASTEqual(std::make_shared<ASTSwitch>(aplusb, Default));
+  Default->next = arg3;
+  arg3->next = arg1;
+  testASTEqual(std::make_shared<ASTSwitch>(aplusb, Default));
+}
+

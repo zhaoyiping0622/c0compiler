@@ -8,23 +8,31 @@
 #include "base.h"
 #include "memory"
 #include "scan.h"
-#include "stack"
 #include "token.h"
-#include "unordered_map"
 #include "vector"
-#include "cstdarg"
 
-void parseError(const char *errorMessage);
+//void parseError(const char *errorMessage);
+class ParseError : public BaseError {
+ public:
+  std::vector<Tokentype> expectToken;
+  void parseOperation();
+  ParseError(std::vector<Tokentype> v, Tokentype errorToken);
+  ParseError();
+  ParseError(std::string errorMessage);
+  const char *what() const noexcept;
+};
 
 class Parse {
  public:
   Parse(std::shared_ptr<Tokenizer> tokenlizer);
   Parse();
+  std::shared_ptr<AST> run();
  protected:
   std::shared_ptr<AST> getTail(std::shared_ptr<AST> now);
   std::shared_ptr<Tokenizer> tokenizer;
   std::shared_ptr<AST> root;
   void init();
+  void initSymbolTable();
   void parse();
   Token getToken();
   Token popToken();
@@ -55,11 +63,11 @@ class Parse {
   std::shared_ptr<AST> readAssign(std::string id = ""); // DONE
   std::shared_ptr<ASTCondition> readCondition(); // DONE
   std::shared_ptr<AST> readElse(); // DONE
-  std::shared_ptr<ASTStatement> readBoolean(); // DONE
-  std::shared_ptr<ASTStatement> readOr(); // DONE
-  std::shared_ptr<ASTStatement> readAnd(); // DONE
-  std::shared_ptr<ASTStatement> readNot(); // DONE
-  std::shared_ptr<ASTStatement> readCond(); // DONE
+  std::shared_ptr<ASTExpression> readBoolean(); // DONE
+  std::shared_ptr<ASTExpression> readOr(); // DONE
+  std::shared_ptr<ASTExpression> readAnd(); // DONE
+  std::shared_ptr<ASTExpression> readNot(); // DONE
+  std::shared_ptr<ASTExpression> readCond(); // DONE
   std::shared_ptr<AST> readLoop(); // DONE
   std::shared_ptr<AST> readSwitch(); // DONE
   std::shared_ptr<AST> readSwitch1(); // DONE
@@ -80,5 +88,8 @@ class Parse {
   void parseErrorUnexpectedToken(int num, ...);
   void parseErrorUnexpectedToken(const char *);
 };
+
+void parseErrorRedefinition(const std::string errorMessage);
+void parseError(const std::string errorMessage);
 
 #endif //COMPILER_COMPILER_INCLUDE_PARSE_H_

@@ -6,7 +6,7 @@
 #include "json.hpp"
 #include "parse.h"
 
-using json=nlohmann::json;
+using json = nlohmann::json;
 
 #define RESOURCESPARSE (RESOURCES+(std::string)"parse/")
 #define RESOURCESPARSEJSON (RESOURCESPARSE+(std::string)"json/")
@@ -15,6 +15,7 @@ using json=nlohmann::json;
 #define JSONLOCATION(x) (RESOURCESPARSEJSON+(std::string)(JSONFILENAME(x)))
 #define TOKENFILENAME(x) (x+(std::string)".token")
 #define TOKENLOCATION(x) (RESOURCESPARSETOKEN+(std::string)(TOKENFILENAME(x)))
+#define SYMBOLTABLELOCATION(x) (RESOURCESPARSE+(std::string)"SymbolTable/"+x)
 
 class FileTokenizer : public Tokenizer {
  public:
@@ -103,7 +104,8 @@ class ParseTest : public Parse, public testing::Test {
 TEST_F(ParseTest,filename){\
   setTokenizer(#filename);\
   json j = getSTDJSON(#filename);\
-  json j2 = read();\
+  json j2 = toJSON(read(),true);\
+  ASSERT_EQ(j.dump(), j2.dump()) << j.dump(1) << std::endl << j2.dump(1) << std::endl;\
   ASSERT_EQ(j, j2) << j << std::endl << j2 << std::endl;\
 }
 
@@ -118,13 +120,13 @@ TEST_F(ParseTest,filename){\
     if (ret) {tail = getTail(tail); tail->next = read();}\
     else tail = ret = read();\
   }\
-  j2 = ret;\
-  ASSERT_EQ(jstd.dump(0), j2.dump(0)) << jstd.dump(1) << std::endl << j2.dump(1) << std::endl;\
+  j2 = toJSON(ret, true);\
+  ASSERT_EQ(jstd.dump(), j2.dump()) << jstd.dump(1) << std::endl << j2.dump(1) << std::endl;\
   ASSERT_EQ(jstd, j2) << jstd << std::endl << j2 << std::endl;\
 }
 
-PARSESINGLETEST(aplusb, readExpression)
-PARSESINGLETEST(constDeclare, readConstDeclare)
+PARSESINGLETEST (aplusb, readExpression)
+PARSESINGLETEST (constDeclare, readConstDeclare)
 PARSESINGLETEST (compoundStatements1, readCompound_statements)
 PARSESINGLETEST (compoundStatements2, readCompound_statements)
 PARSESINGLETEST (compoundStatements3, readCompound_statements)
@@ -181,6 +183,129 @@ TEST_F(ParseTest, mulOp) {
   ASSERT_EQ(DIV, readMulOp()->valueType);
   ASSERT_EQ(getToken().tokentype, EOFTOKEN);
 }
+
+class ParseSymbolTest : public Parse, public ::testing::Test {
+ protected:
+  virtual void SetUp() {
+    for (auto &x:AST::symbolTables)
+      x.clear();
+  }
+  virtual void TearDown() {
+    while (AST::symbolTables.size() > 1)AST::symbolTables.pop_back();
+  }
+  json getSTDJSON(std::string filename) {
+    filename = JSONLOCATION(filename);
+    std::ifstream input(filename);
+    std::string s;
+    getline(input, s);
+    return json::parse(s);
+  }
+  std::shared_ptr<SymbolTable> global;
+  std::shared_ptr<SymbolTable> getSymbolTable(std::string filename) {
+    if (global)
+      global->clear();
+    filename = SYMBOLTABLELOCATION(filename);
+    std::ifstream input(filename);
+    std::string s;
+    std::shared_ptr<SymbolTable> now;
+    std::string nowName;
+    while (input >> s) {
+      if (s == "function" || s == "global") {
+        if (s == "function") {
+          input >> s;
+        }
+        if (nowName == "global")global = now;
+        else if (now) {
+          auto symbolFunction = std::static_pointer_cast<SymbolFunction>(global->get(nowName));
+          symbolFunction->funSymbolTable = now;
+        }
+        nowName = s;
+        now = std::make_shared<SymbolTable>(nowName);
+      } else {
+        std::string valueId = s;
+        std::string type;
+        bool isConst;
+        input >> type;
+        std::string tmp;
+        input >> tmp;
+        if (tmp == "true") isConst = true;
+        else if (tmp == "false") isConst = false;
+        else if (tmp == "INT" || tmp == "CHAR" || tmp == "VOID" || tmp == "end") {
+          // function declare
+          std::vector<Tokentype> args;
+          while (tmp != "end") {
+            args.emplace_back(toTokenType(tmp));
+            input >> tmp;
+          }
+          now->insert<SymbolFunction>(valueId, args, toTokenType(type));
+          continue;
+        } else {
+          int length = atoi(tmp.c_str());
+          now->insert<SymbolArray>(valueId, toTokenType(type), length);
+          continue;
+        }
+        int value;
+        input >> value;
+        now->insert<SymbolValue>(valueId, toTokenType(type), isConst, value);
+      }
+    }
+    if (now) {
+      if (nowName == "global")global = now;
+      else {
+        auto symbolFunction = std::static_pointer_cast<SymbolFunction>(global->get(nowName));
+        symbolFunction->funSymbolTable = now;
+      }
+    }
+    return global;
+  }
+};
+
+TEST_F(ParseSymbolTest, init) {
+  root = toAST(AST)(getSTDJSON("initSymbolTable"));
+  initSymbolTable();
+  auto stdSymbolTable = getSymbolTable("init");
+  ASSERT_TRUE(AST::symbolTables[0] == *(stdSymbolTable.get()));
+}
+
+#define SymbolTestError(x) TEST_F(ParseSymbolTest,x){\
+root=toAST(AST)(getSTDJSON(#x));\
+ASSERT_THROW(initSymbolTable(),ParseError);\
+}
+
+#define SymbolTestNoError(x) TEST_F(ParseSymbolTest,x){\
+root=toAST(AST)(getSTDJSON(#x));\
+initSymbolTable();\
+}
+
+SymbolTestError(functionInFunction)
+SymbolTestError(redefinition)
+SymbolTestError(readConst)
+SymbolTestError(assignConst)
+SymbolTestError(callLessArg)
+SymbolTestError(callMoreArg)
+SymbolTestError(boolErrorMinus)
+SymbolTestError(boolErrorAdd)
+SymbolTestError(boolErrorMul)
+SymbolTestError(boolErrorAssign)
+SymbolTestError(boolErrorArray)
+SymbolTestError(assignExpression)
+SymbolTestError(notArray)
+SymbolTestError(leafFunction)
+SymbolTestError(readArray)
+SymbolTestError(addString)
+SymbolTestError(voidRet)
+SymbolTestError(boolRet)
+SymbolTestError(switchBool)
+
+SymbolTestNoError(trueCondition)
+SymbolTestNoError(trueLoop)
+SymbolTestNoError(trueCall)
+SymbolTestNoError(trueExpression)
+SymbolTestNoError(trueLeaf)
+SymbolTestNoError(trueRead)
+SymbolTestNoError(trueWrite)
+SymbolTestNoError(trueRet)
+SymbolTestNoError(trueSwitch)
 
 #undef PARSEMULTITEST
 #undef PARSESINGLETEST

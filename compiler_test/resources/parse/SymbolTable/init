@@ -1,0 +1,36 @@
+global
+a INT true 1
+b CHAR true 49
+d INT true 1
+e CHAR true 49
+c INT false 2
+fun1 INT INT CHAR end
+fun2 CHAR INT CHAR end
+main VOID end
+
+function fun1
+c INT false 0
+C CHAR false 0
+a INT true 1
+b CHAR true 49
+d INT true 1
+e CHAR true 49
+f INT false 2
+g INT 8
+
+function fun2
+c INT false 0
+C CHAR false 0
+a INT true 1
+b CHAR true 49
+d INT true 1
+e CHAR true 49
+f INT false 2
+
+function main
+a INT true 1
+b CHAR true 49
+d INT true 1
+e CHAR true 49
+f INT false 2
+

@@ -27,9 +27,10 @@ std::string visualize(std::string s) {
   }
   return ret;
 }
+
 void scanError(const char *errorMessage) {
   std::string es = "SCAN ERROR: " + (std::string)(errorMessage);
-  error(es.c_str());
+  throw ScanError(es.c_str());
 }
 Token Scan::getToken() {
   int state = 1;
@@ -43,11 +44,10 @@ Token Scan::getToken() {
       continue;
     }
     if (states[state].terminate) {
-      if (symbolTable.find(s) != symbolTable.end())
-        return Token(symbolTable[s].tokentype, s);
-      else if (states[state].tokentype == ID)
-        symbolTable[s].tokentype = ID;
-      return Token(states[state].tokentype, s);
+      if (keywords.find(s) != keywords.end())
+        return Token(keywords[s], s);
+      else
+        return Token(states[state].tokentype, s);
     } else if (state == 1) {
       popNextChar();
       continue;
@@ -214,7 +214,7 @@ void Scan::initTable() {
 #undef add
 }
 void Scan::initSymbolTable() {
-#define add(x, y) symbolTable[#x]=Symbol(y)
+#define add(x, y) keywords[#x]=y
   add(int, INT);
   add(char, CHAR);
   add(void, VOID);
@@ -230,4 +230,13 @@ void Scan::initSymbolTable() {
   add(const, CONST);
   add(else, ELSE);
 #undef add
+}
+ScanError::ScanError(std::string errorMessage) : BaseError(errorMessage) {
+  errorMessage += "SCAN ERROR: ";
+}
+void ScanError::ScanOperation() {
+  baseOperation();
+}
+const char *ScanError::what() const noexcept {
+  return errorMessage.c_str();
 }

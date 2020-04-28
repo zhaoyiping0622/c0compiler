@@ -68,16 +68,16 @@ N <and1>
 F return std::shared_ptr<AST>(nullptr);
 N <not>
 | !<cond>
-F return ASTStatement(NOT,v[0],std::shared_ptr<AST>(nullptr));
+F return ASTExpression(NOT,v[0],std::shared_ptr<AST>(nullptr));
 | <cond>
 F return v[0];
 N <cond>
 | <expression><cond1>
-F if(v[1]){v[1]->statement1=v[0];return v[1]};
-F else return ASTStatement(NE,ASTLeaf("0",UNSIGNED),v[0]);
+F if(v[1]){v[1]->expression1=v[0];return v[1]};
+F else return ASTExpression(NE,ASTLeaf("0",UNSIGNED),v[0]);
 N <cond1>
 | <cmpOp><expression>
-F return ASTStatement(v[0]->valuetype,std::shared_ptr<AST>(nullptr),v[1]);
+F return ASTExpression(v[0]->valuetype,std::shared_ptr<AST>(nullptr),v[1]);
 | <null>
 F return std::shared_ptr<AST>(nullptr);
 N <loop>

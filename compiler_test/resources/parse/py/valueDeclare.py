@@ -20,4 +20,4 @@ inte.next = chara
 chara.next = charc
 charc.next = chard
 chard.next = chare
-print(dumps(inta.toJSON()).replace('None', 'null'))
+printLines([inta])

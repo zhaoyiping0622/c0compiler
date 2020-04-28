@@ -18,4 +18,4 @@ intc.next = intd
 intd.next = chara
 chara.next = charb
 charb.next = charc
-print(dumps(inta.toJSON()).replace("None", "null"))
+printLines([inta])
