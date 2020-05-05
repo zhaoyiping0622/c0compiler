@@ -5,13 +5,13 @@
 #ifndef COMPILER_COMPILER_INCLUDE_AST_H_
 #define COMPILER_COMPILER_INCLUDE_AST_H_
 #include "memory"
-#include "unordered_map"
 #include "vector"
 #include "deque"
 #include "base.h"
 #include "token.h"
 #include "symbol.h"
 #include "json.hpp"
+#include "TAC.h"
 using json = nlohmann::json;
 
 #define to_jsonDeclare(type) friend void to_json(json&j,std::shared_ptr<type> p)
@@ -21,16 +21,17 @@ class AST {
  public:
   std::shared_ptr<AST> next;
   virtual json toJSON(bool root = false) = 0;
-  AST();
-  to_jsonDeclare(AST);
-  static std::deque<SymbolTable> symbolTables;
-  static std::shared_ptr<Symbol> getSymbol(std::string value);
+  virtual address toTAC(TAClist &result,TransInfo transInfo) = 0;
   /*
    * return INT CHAR ARRAY UNDEFINED BOOL
    * may ASTLeaf can return STRING but it should only be used in write
    * (TODO: special judge in write)
    */
-  virtual Tokentype initSymbolTable() = 0;
+  virtual Tokentype check() = 0;
+  AST();
+  to_jsonDeclare(AST);
+  static std::deque<SymbolTable> symbolTables;
+  static std::shared_ptr<Symbol> getSymbol(std::string value);
 };
 // declare value or function
 class ASTDeclare : public AST {
@@ -49,21 +50,23 @@ class ASTDeclareFun : public ASTDeclare {
   ASTDeclareFun();
   ASTDeclareFun(Tokentype, std::vector<std::pair<Tokentype, std::string>>, std::shared_ptr<AST>);
   ASTDeclareFun(Tokentype, std::vector<std::pair<Tokentype, std::string>>, std::shared_ptr<AST>, std::string);
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTDeclareFun);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 // declare value
 class ASTDeclareValue : public ASTDeclare {
  public:
   bool isConst;
   Tokentype valueType;
-  std::string value;// the value of valueid used in const
+  std::string value;// the value of valueId used in const
   ASTDeclareValue();
   ASTDeclareValue(bool, Tokentype, std::string, std::string);
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTDeclareValue);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 class ASTDeclareArray : public ASTDeclare {
  public:
@@ -71,9 +74,10 @@ class ASTDeclareArray : public ASTDeclare {
   Tokentype valueType;
   ASTDeclareArray(int, Tokentype, std::string);
   ASTDeclareArray();
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTDeclareArray);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 // if else
 class ASTCondition : public AST {
@@ -83,9 +87,10 @@ class ASTCondition : public AST {
   std::shared_ptr<AST> elseStatements;
   ASTCondition();
   ASTCondition(std::shared_ptr<ASTExpression>, std::shared_ptr<AST>, std::shared_ptr<AST>);
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTCondition);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 // loop
 class ASTLoop : public AST {
@@ -94,9 +99,10 @@ class ASTLoop : public AST {
   std::shared_ptr<AST> body;
   ASTLoop();
   ASTLoop(std::shared_ptr<ASTExpression>, std::shared_ptr<AST>);
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTLoop);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 // call function
 class ASTCall : public AST {
@@ -105,9 +111,10 @@ class ASTCall : public AST {
   std::shared_ptr<AST> args;
   ASTCall(std::string, std::shared_ptr<AST>);
   ASTCall();
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTCall);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 // cmp cal assign and so on
 class ASTExpression : public AST {
@@ -118,9 +125,10 @@ class ASTExpression : public AST {
   std::shared_ptr<AST> expression2;
   ASTExpression();
   ASTExpression(Tokentype, std::shared_ptr<AST>, std::shared_ptr<AST>);
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTExpression);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 // ID character integer
 class ASTLeaf : public AST {
@@ -129,9 +137,10 @@ class ASTLeaf : public AST {
   Tokentype valueType;
   ASTLeaf();
   ASTLeaf(std::string, Tokentype);
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTLeaf);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 
 // int
@@ -140,9 +149,10 @@ class ASTRead : public AST {
   std::shared_ptr<ASTLeaf> args;
   ASTRead();
   ASTRead(std::shared_ptr<ASTLeaf> args);
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTRead);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 
 // int
@@ -151,9 +161,10 @@ class ASTWrite : public AST {
   std::shared_ptr<AST> args;
   ASTWrite(std::shared_ptr<AST> &&args);
   ASTWrite();
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTWrite);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 
 class ASTRet : public AST {
@@ -161,9 +172,10 @@ class ASTRet : public AST {
   std::shared_ptr<AST> value;
   ASTRet();
   ASTRet(std::shared_ptr<AST> value);
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTRet);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 
 class ASTSwitch : public AST {
@@ -173,9 +185,10 @@ class ASTSwitch : public AST {
   std::shared_ptr<AST> cases;
   ASTSwitch(std::shared_ptr<AST> expression, std::shared_ptr<AST> cases);
   ASTSwitch();
-  Tokentype initSymbolTable() override;
+  Tokentype check() override;
   json toJSON(bool root = false) override;
   to_jsonDeclare(ASTSwitch);
+  address toTAC(TAClist &result,TransInfo transInfo) override;
 };
 
 #define toJSONDeclare(type) json toJSON(std::shared_ptr<type>p,bool root=false);

@@ -4,9 +4,9 @@
 
 #ifndef COMPILER_COMPILER_INCLUDE_TOKEN_H_
 #define COMPILER_COMPILER_INCLUDE_TOKEN_H_
+#include "base.h"
 #include "string"
 #include "iostream"
-#include "base.h"
 #include "unordered_map"
 
 enum emTokentype : int {

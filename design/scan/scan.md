@@ -64,7 +64,7 @@
 
 + `scan.h`中`tokentype`添加保留字
 + `testscan.cpp`中`SetUp`函数中添加保留字
-+ 如果是关键字还需要添加`initSymbolTable`函数
++ 如果是关键字还需要添加`keywords`函数
 
 #### 增加运算符
 

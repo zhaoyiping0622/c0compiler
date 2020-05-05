@@ -29,4 +29,5 @@ printLines([
     .copy(ASTExpression(operatorType="ASSIGN", expression1=c.copy(), expression2=d.copy()))  # c=d
     .copy(ASTExpression(operatorType="ARRAY", expression1=a, expression2=c))  # a[c]
     .copy(ASTExpression(operatorType="ARRAY", expression1=b, expression2=cplusd)))  # b[d]
+    .copy(ASTExpression(operatorType="UNDEFINED"))
 ])
