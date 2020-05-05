@@ -8,7 +8,7 @@ else:
 printLines([
     inta, intb,
     main.setbody(
-        ASTSwitch(expression=ASTExpression(operatorType="UNDEFINED", expression1=a),
+        ASTSwitch(expression=a,
                   cases=aplusb.copy(num0).copy(aplusb).copy(num1).copy(aplusb))
             .copy(ASTSwitch(expression=aplusb, cases=aplusb.copy(num0).copy(aplusb).copy(num1).copy(aplusb)))
 

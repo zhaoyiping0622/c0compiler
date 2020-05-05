@@ -74,7 +74,7 @@ class Parse {
   std::shared_ptr<AST> readDefault(); // DONE
   std::shared_ptr<AST> readCases(); // DONE
   std::shared_ptr<AST> readCase(); // DONE
-  std::shared_ptr<ASTCall> readCall_fun(std::string id = ""); // DONE
+  std::shared_ptr<ASTCall> readCallFun(std::string id = ""); // DONE
   std::shared_ptr<AST> readArgValue(); // DONE
   std::shared_ptr<AST> readStatements(); // DONE
   std::shared_ptr<ASTRead> readRead();

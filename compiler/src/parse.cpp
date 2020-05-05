@@ -472,7 +472,7 @@ std::shared_ptr<AST> Parse::readStatement() {
       std::string id = popToken().s;
       nextToken = getToken();
       if (nextToken.tokentype == LSBRACKETS) {
-        ret = readCall_fun(id);
+        ret = readCallFun(id);
       } else if (nextToken.tokentype == ASSIGN) {
         ret = readAssign(id);
       }
@@ -695,7 +695,7 @@ std::shared_ptr<AST> Parse::readCase() {
   return Case;
 }
 // DONE
-std::shared_ptr<ASTCall> Parse::readCall_fun(std::string id) {
+std::shared_ptr<ASTCall> Parse::readCallFun(std::string id) {
   auto ret = std::make_shared<ASTCall>();
   if (id == "")id = match(ID).s;
   ret->funName = id;
@@ -851,7 +851,7 @@ Parse::Parse() {}
 void Parse::initSymbolTable() {
   for (auto now = root; now; now = now->next) {
     // the program is made up of declares
-    now->initSymbolTable();
+    now->check();
   }
 }
 std::shared_ptr<AST> Parse::run() {

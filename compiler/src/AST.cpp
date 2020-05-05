@@ -6,6 +6,8 @@
 #include "base.h"
 #include "parse.h"
 #include "functional"
+#include "unordered_map"
+#include "algorithm"
 
 AST::AST() : next(nullptr) {}
 ASTDeclareFun::ASTDeclareFun() {}
@@ -127,7 +129,6 @@ json ASTDeclareFun::toJSON(bool root) {
   makeArray;
   return ret;
 }
-
 json ASTDeclareValue::toJSON(bool root) {
   json ret;
   ret["name"] = "value declare";
@@ -138,7 +139,6 @@ json ASTDeclareValue::toJSON(bool root) {
   makeArray;
   return ret;
 }
-
 json ASTDeclareArray::toJSON(bool root) {
   json ret;
   ret["name"] = "array declare";
@@ -148,7 +148,6 @@ json ASTDeclareArray::toJSON(bool root) {
   makeArray;
   return ret;
 }
-
 json ASTCondition::toJSON(bool root) {
   json ret;
   ret["name"] = "condition";
@@ -183,7 +182,6 @@ json ASTExpression::toJSON(bool root) {
   makeArray;
   return ret;
 }
-
 json ASTLeaf::toJSON(bool root) {
   json ret;
   ret["name"] = "leaf";
@@ -192,7 +190,6 @@ json ASTLeaf::toJSON(bool root) {
   makeArray;
   return ret;
 }
-
 json ASTRead::toJSON(bool root) {
   json ret;
   ret["name"] = "read";
@@ -200,7 +197,6 @@ json ASTRead::toJSON(bool root) {
   makeArray;
   return ret;
 }
-
 json ASTWrite::toJSON(bool root) {
   json ret;
   ret["name"] = "write";
@@ -208,7 +204,6 @@ json ASTWrite::toJSON(bool root) {
   makeArray;
   return ret;
 }
-
 json ASTRet::toJSON(bool root) {
   json ret;
   ret["name"] = "ret";
@@ -216,7 +211,6 @@ json ASTRet::toJSON(bool root) {
   makeArray;
   return ret;
 }
-
 json ASTSwitch::toJSON(bool root) {
   json ret;
   ret["name"] = "switch";
@@ -236,7 +230,7 @@ std::shared_ptr<Symbol> AST::getSymbol(std::string value) {
 }
 
 int ASTListOperation(std::shared_ptr<AST> ast,
-                     std::function<void(std::shared_ptr<AST>)> f = [](std::shared_ptr<AST> ast) { ast->initSymbolTable(); }) {
+                     std::function<void(std::shared_ptr<AST>)> f = [](std::shared_ptr<AST> ast) { ast->check(); }) {
   int cnt = 0;
   auto now = ast;
   while (now) {
@@ -247,7 +241,7 @@ int ASTListOperation(std::shared_ptr<AST> ast,
   return cnt;
 }
 
-Tokentype ASTDeclareFun::initSymbolTable() {
+Tokentype ASTDeclareFun::check() {
   auto &symbolTable = symbolTables.back();
   auto ptr = symbolTable.insert<SymbolFunction>(valueId);
   if (!ptr) {
@@ -268,7 +262,7 @@ Tokentype ASTDeclareFun::initSymbolTable() {
       if (toASTDeclareFun) {
         parseErrorRedefinition(toASTDeclareFun->valueId + " is declared in function");
       } else {
-        ast->initSymbolTable();
+        ast->check();
       }
     });
     ptr->funSymbolTable = std::make_shared<SymbolTable>(symbolTables.back());
@@ -276,34 +270,34 @@ Tokentype ASTDeclareFun::initSymbolTable() {
   }
   return UNDEFINED;
 }
-Tokentype ASTDeclareValue::initSymbolTable() {
+Tokentype ASTDeclareValue::check() {
   auto &symbolTable = symbolTables.back();
   if (!symbolTable.insert<SymbolValue>(valueId, valueType, isConst, realValue(value))) {
     parseErrorRedefinition(valueId + " has been declared");
   }
   return UNDEFINED;
 }
-Tokentype ASTDeclareArray::initSymbolTable() {
+Tokentype ASTDeclareArray::check() {
   auto &symbolTable = symbolTables.back();
   if (!symbolTable.insert<SymbolArray>(valueId, valueType, length)) {
     parseErrorRedefinition(valueId + " has been declared");
   }
   return UNDEFINED;
 }
-Tokentype ASTCondition::initSymbolTable() {
-  if (cmp->initSymbolTable() != BOOL)
+Tokentype ASTCondition::check() {
+  if (cmp->check() != BOOL)
     parseError("the compare expression in if must be bool");
   ASTListOperation(thenStatements);
   ASTListOperation(elseStatements);
   return UNDEFINED;
 }
-Tokentype ASTLoop::initSymbolTable() {
-  if (cmp->initSymbolTable() != BOOL)
+Tokentype ASTLoop::check() {
+  if (cmp->check() != BOOL)
     parseError("the compare expression in while must be bool");
   ASTListOperation(body);
   return UNDEFINED;
 }
-Tokentype ASTCall::initSymbolTable() {
+Tokentype ASTCall::check() {
   auto symbol = symbolTables[0].get(funName);
   if (!symbol || symbol->symbolType != FUNCTION) {
     parseError("function " + funName + " is not declared");
@@ -321,11 +315,12 @@ Tokentype ASTCall::initSymbolTable() {
   }
   return UNDEFINED;
 }
-Tokentype ASTExpression::initSymbolTable() {
-  Tokentype type1 = expression1->initSymbolTable();
+Tokentype ASTExpression::check() {
+  if (operatorType == UNDEFINED)return UNDEFINED;
+  Tokentype type1 = expression1->check();
   if (type1 == STRING)
     parseError("operations on string has not been supported");
-  if (!expression2 || expression2->initSymbolTable() == UNDEFINED) {
+  if (!expression2 || expression2->check() == UNDEFINED) {
     // - !
     switch (operatorType) {
       case MINUS:
@@ -340,11 +335,10 @@ Tokentype ASTExpression::initSymbolTable() {
         } else {
           return BOOL;
         }
-      case UNDEFINED:return type1;
       default:parseError(toString(operatorType) + " must have more than 1 argument");
     }
   } else {
-    Tokentype type2 = expression2->initSymbolTable();
+    Tokentype type2 = expression2->check();
     if (type2 == STRING)
       parseError("operations on string has not been supported");
     if (type1 == UNDEFINED || type2 == UNDEFINED) {
@@ -374,14 +368,13 @@ Tokentype ASTExpression::initSymbolTable() {
         // =
       case ASSIGN: {
         auto astLeaf = std::dynamic_pointer_cast<ASTLeaf>(expression1);
-        if (astLeaf && astLeaf->valueType == ID || type1 == ARRAY) {
-          if (type1 != ARRAY) {
-            auto symbol = std::dynamic_pointer_cast<SymbolValue>(getSymbol(astLeaf->value));
-            if (!symbol || symbol->isConst) {
-              parseError(astLeaf->value + " is a const value");
-            }
+        auto astExpression = std::dynamic_pointer_cast<ASTExpression>(expression1);
+        if (astLeaf && astLeaf->valueType == ID) {
+          auto symbol = std::dynamic_pointer_cast<SymbolValue>(getSymbol(astLeaf->value));
+          if (!symbol || symbol->isConst) {
+            parseError(astLeaf->value + " is a const value");
           }
-        } else
+        } else if (!astExpression || astExpression->operatorType != ARRAY)
           parseError("only variable or array can be left value");
       }
         if (type2 == UNDEFINED || type2 == BOOL)
@@ -406,7 +399,7 @@ Tokentype ASTExpression::initSymbolTable() {
     }
   }
 }
-Tokentype ASTLeaf::initSymbolTable() {
+Tokentype ASTLeaf::check() {
   if (valueType != ID) {
     switch (valueType) {
       case INT:
@@ -431,9 +424,9 @@ Tokentype ASTLeaf::initSymbolTable() {
   if (symbol->symbolType == ARRAY)return ARRAY;
   return std::dynamic_pointer_cast<SymbolValue>(symbol)->valueType;
 }
-Tokentype ASTRead::initSymbolTable() {
+Tokentype ASTRead::check() {
   ASTListOperation(args, [&](std::shared_ptr<AST> ast) {
-    ast->initSymbolTable();
+    ast->check();
     /*
      * parse process ensures that args of read are ID
      * not array
@@ -452,13 +445,13 @@ Tokentype ASTRead::initSymbolTable() {
     }
   });
 }
-Tokentype ASTWrite::initSymbolTable() {
+Tokentype ASTWrite::check() {
   ASTListOperation(args, [&](std::shared_ptr<AST> ast) {
-    ast->initSymbolTable();
+    ast->check();
   });
 }
-Tokentype ASTRet::initSymbolTable() {
-  auto type = value->initSymbolTable();
+Tokentype ASTRet::check() {
+  auto type = value->check();
   auto funName = symbolTables.back().tableName;
   auto symbolFunction = std::dynamic_pointer_cast<SymbolFunction>(symbolTables[0].get(funName));
   if (!symbolFunction) {
@@ -469,13 +462,13 @@ Tokentype ASTRet::initSymbolTable() {
   if (type != INT && type != CHAR)
     parseError("you can only return int or char");
 }
-Tokentype ASTSwitch::initSymbolTable() {
-  auto type = expression->initSymbolTable();
+Tokentype ASTSwitch::check() {
+  auto type = expression->check();
   if (type != INT && type != CHAR) {
     parseError("object of switch must be int or char");
   }
   ASTListOperation(cases, [&](std::shared_ptr<AST> ast) {
-    ast->initSymbolTable();
+    ast->check();
   });
 }
 
@@ -637,6 +630,430 @@ toASTImplementHead(ASTSwitch) {
   if (j.is_null())return nullptr;
   auto ret = std::make_shared<ASTSwitch>();
   ret->cases = toAST(AST)(j["cases"]);
-  ret->expression = toAST(ASTExpression)(j["expression"]);
+  ret->expression = toAST(AST)(j["expression"]);
   return ret;
+}
+
+address globalName(std::string name, Tokentype tokentype = INT) {
+  std::string addr = "g";
+  if (tokentype == CHAR)addr += "c";
+  else addr += "i";
+  addr += name;
+  return address(addr);
+}
+
+address localName(std::string name, Tokentype tokentype = INT) {
+  std::string addr = "l";
+  if (tokentype == CHAR)addr += "c";
+  else addr += "i";
+  addr += name;
+  return address(addr);
+}
+
+bool isAddress(address addr) {
+  return addr[0] == 'l' || addr[0] == 'g' || addr[0] == 't';
+}
+
+address ASTDeclareFun::toTAC(TAClist &result, TransInfo transInfo) {
+  symbolTables.emplace_back(*(std::dynamic_pointer_cast<SymbolFunction>(symbolTables.front().get(valueId))->funSymbolTable));
+  int cnt = 0;
+  result.push_back(createTAC<TACLABEL>(valueId));
+  for (auto[tokentype, argName]:args) {
+    switch (tokentype) {
+      case INT:argName = localName(argName);
+        result.push_back(createTAC<TACDECLAREINT>(argName));
+        break;
+      case CHAR:argName = localName(argName, CHAR);
+        result.push_back(createTAC<TACDECLARECHAR>(argName));
+        break;
+    }
+    result.push_back(createTAC<TACGETARG>(std::to_string(++cnt), argName));
+  }
+  transInfo.labelGenerator->addLabel(valueId);
+  address returnLabel = transInfo.labelGenerator->newLabel();
+  transInfo.returnLabel = returnLabel;
+  ASTListOperation(body, [&](std::shared_ptr<AST> ast) {
+    ast->toTAC(result, transInfo);
+  });
+  result.push_back(createTAC<TACLABEL>(returnLabel));
+  result.push_back(createTAC<TACRET>());
+  symbolTables.pop_back();
+  return addrUNDEFINED;
+}
+address ASTDeclareValue::toTAC(TAClist &result, TransInfo transInfo) {
+  if (!isConst) {
+    if (symbolTables.size() == 2)
+      switch (valueType) {
+        case INT:result.push_back(createTAC<TACDECLAREINT>(localName(valueId)));
+          break;
+        case CHAR:result.push_back(createTAC<TACDECLARECHAR>(localName(valueId, CHAR)));
+          break;
+      }
+    else
+      switch (valueType) {
+        case INT:result.push_back(createTAC<TACDECLAREINT>(globalName(valueId)));
+          break;
+        case CHAR:result.push_back(createTAC<TACDECLARECHAR>(globalName(valueId, CHAR)));
+          break;
+      }
+  }
+  return addrUNDEFINED;
+}
+address ASTDeclareArray::toTAC(TAClist &result, TransInfo transInfo) {
+  if (symbolTables.size() == 2)
+    switch (valueType) {
+      case INT:result.push_back(createTAC<TACDECLAREARRAYINT>(address(std::to_string(length)), localName(valueId)));
+        break;
+      case CHAR:
+        result.push_back(createTAC<TACDECLAREARRAYCHAR>(address(std::to_string(length)),
+                                                        localName(valueId, CHAR)));
+        break;
+    }
+  else
+    switch (valueType) {
+      case INT:result.push_back(createTAC<TACDECLAREARRAYINT>(address(std::to_string(length)), globalName(valueId)));
+        break;
+      case CHAR:
+        result.push_back(createTAC<TACDECLAREARRAYCHAR>(address(std::to_string(length)),
+                                                        globalName(valueId, CHAR)));
+        break;
+    }
+  return addrUNDEFINED;
+}
+/*
+ * 1. cmp thenLabel then JendLabel elseLabel else endLabel
+ * 2. cmp thenLabel then elseLabel
+ */
+address ASTCondition::toTAC(TAClist &result, TransInfo transInfo) {
+  address thenLabel = transInfo.labelGenerator->newLabel();
+  address elseLabel = transInfo.labelGenerator->newLabel();
+  transInfo.thenLabel = thenLabel;
+  transInfo.elseLabel = elseLabel;
+  cmp->toTAC(result, transInfo);
+  result.push_back(createTAC<TACLABEL>(thenLabel));
+  ASTListOperation(thenStatements, [&](std::shared_ptr<AST> ast) { ast->toTAC(result, transInfo); });
+  if (elseStatements) {
+    address endLabel = transInfo.labelGenerator->newLabel();
+    result.push_back(createTAC<TACJ>(endLabel));
+    result.push_back(createTAC<TACLABEL>(elseLabel));
+    ASTListOperation(elseStatements, [&](std::shared_ptr<AST> ast) { ast->toTAC(result, transInfo); });
+    result.push_back(createTAC<TACLABEL>(endLabel));
+  } else {
+    result.push_back(createTAC<TACLABEL>(elseLabel));
+  }
+  return addrUNDEFINED;
+}
+/*
+ * beginLabel cmp thenLabel then jbegin endLabel
+ */
+address ASTLoop::toTAC(TAClist &result, TransInfo transInfo) {
+  address beginLabel = transInfo.labelGenerator->newLabel();
+  result.push_back(createTAC<TACLABEL>(beginLabel));
+  address thenLabel = transInfo.labelGenerator->newLabel();
+  address endLabel = transInfo.labelGenerator->newLabel();
+  transInfo.thenLabel = thenLabel;
+  transInfo.elseLabel = endLabel;
+  cmp->toTAC(result, transInfo);
+  result.push_back(createTAC<TACLABEL>(thenLabel));
+  ASTListOperation(body, [&](std::shared_ptr<AST> ast) { ast->toTAC(result, transInfo); });
+  result.push_back(createTAC<TACJ>(beginLabel));
+  result.push_back(createTAC<TACLABEL>(endLabel));
+  return addrUNDEFINED;
+}
+/*
+ * 1. cal args
+ * 2. call
+ * 3. return addrUNDEFINED
+ */
+address ASTCall::toTAC(TAClist &result, TransInfo transInfo) {
+  int cnt = 0;
+  TAClist tmp;
+  ASTListOperation(args, [&](std::shared_ptr<AST> ast) {
+    auto addr = ast->toTAC(result, transInfo);
+    tmp.push_back(createTAC<TACSETARG>(address(std::to_string(++cnt)), addr));
+  });
+  result.splice(result.end(), tmp);
+  result.push_back(createTAC<TACCALL>(funName));
+  address addr = transInfo.addressGenerator->newTmpAddr();
+  result.push_back(createTAC<TACGETRET>(addr));
+  return addr;
+}
+address ASTExpression::toTAC(TAClist &result, TransInfo transInfo) {
+  if (operatorType == UNDEFINED)return addrUNDEFINED;
+  if (!expression1)parseError("unreachable");
+  if (operatorType == NOT) {
+    std::swap(transInfo.thenLabel, transInfo.elseLabel);
+    expression1->toTAC(result, transInfo);
+    return addrUNDEFINED;
+  } else if (operatorType == AND || operatorType == OR) {
+    if (!expression2)parseError("unreachable");
+    address exp2Label = transInfo.labelGenerator->newLabel();
+    TAClist exp2;
+    expression2->toTAC(exp2, transInfo);
+    if (operatorType == AND)
+      transInfo.thenLabel = exp2Label;
+    else
+      transInfo.elseLabel = exp2Label;
+    expression1->toTAC(result, transInfo);
+    result.push_back(createTAC<TACLABEL>(exp2Label));
+    result.splice(result.end(), exp2);
+    return addrUNDEFINED;
+  } else if (operatorType == LT || operatorType == GT || operatorType == NE || operatorType == GE || operatorType == LE
+      || operatorType == EQ) {
+    if (!expression2)parseError("unreachable");
+    address exp1 = expression1->toTAC(result, transInfo);
+    address exp2 = expression2->toTAC(result, transInfo);
+    if (exp1 == addrUNDEFINED || exp2 == addrUNDEFINED)parseError("unreachable");
+    if (!isAddress(exp1) && !isAddress(exp2)) {
+      bool flag;
+      switch (operatorType) {
+        case LT:flag = (atoi(exp1.c_str()) < atoi(exp2.c_str()));
+          break;
+        case LE:flag = (atoi(exp1.c_str()) <= atoi(exp2.c_str()));
+          break;
+        case GT:flag = (atoi(exp1.c_str()) > atoi(exp2.c_str()));
+          break;
+        case GE:flag = (atoi(exp1.c_str()) >= atoi(exp2.c_str()));
+          break;
+        case NE:flag = (atoi(exp1.c_str()) != atoi(exp2.c_str()));
+          break;
+        case EQ:flag = (atoi(exp1.c_str()) == atoi(exp2.c_str()));
+          break;
+      }
+      if (flag)result.push_back(createTAC<TACJ>(transInfo.thenLabel));
+      else result.push_back(createTAC<TACJ>(transInfo.elseLabel));
+    } else {
+      switch (operatorType) {
+        case LT:result.push_back(createTAC<TACJL>(exp1, exp2, transInfo.thenLabel));
+          break;
+        case LE:result.push_back(createTAC<TACJLE>(exp1, exp2, transInfo.thenLabel));
+          break;
+        case GT:result.push_back(createTAC<TACJG>(exp1, exp2, transInfo.thenLabel));
+          break;
+        case GE:result.push_back(createTAC<TACJGE>(exp1, exp2, transInfo.thenLabel));
+          break;
+        case NE:result.push_back(createTAC<TACJNE>(exp1, exp2, transInfo.thenLabel));
+          break;
+        case EQ:result.push_back(createTAC<TACJEQ>(exp1, exp2, transInfo.thenLabel));
+          break;
+      }
+      result.push_back(createTAC<TACJ>(transInfo.elseLabel));
+    }
+    return addrUNDEFINED;
+  } else if (operatorType == MINUS) {
+    address exp1 = expression1->toTAC(result, transInfo);
+    if (exp1 == addrUNDEFINED)parseError("unreachable");
+    if (expression2) {
+      address exp2 = expression2->toTAC(result, transInfo);
+      if (exp2 == addrUNDEFINED)parseError("unreachable");
+      if (!isAddress(exp1) && !isAddress(exp2)) {
+        return address(std::to_string(atoi(exp1.c_str()) - atoi(exp2.c_str())));
+      } else {
+        address addr = transInfo.addressGenerator->newTmpAddr();
+        result.push_back(createTAC<TACSUB>(exp1, exp2, addr));
+        return addr;
+      }
+    } else {
+      if (!isAddress(exp1)) {
+        return address(std::to_string(-atoi(exp1.c_str())));
+      } else {
+        address addr = transInfo.addressGenerator->newTmpAddr();
+        result.push_back(createTAC<TACSUB>(address("0"), exp1, addr));
+        return addr;
+      }
+    }
+  } else if (operatorType == ADD || operatorType == MUL || operatorType == DIV) {
+    if (!expression2)parseError("unreachable");
+    address exp1 = expression1->toTAC(result, transInfo);
+    address exp2 = expression2->toTAC(result, transInfo);
+    if (exp1 == addrUNDEFINED)parseError("unreachable");
+    if (exp2 == addrUNDEFINED)parseError("unreachable");
+    if (!isAddress(exp1) && !isAddress(exp2)) {
+      switch (operatorType) {
+        case ADD:return address(std::to_string(atoi(exp1.c_str()) + atoi(exp2.c_str())));
+        case MUL:return address(std::to_string(atoi(exp1.c_str()) * atoi(exp2.c_str())));
+        case DIV:
+          if (atoi(exp2.c_str()))
+            return address(std::to_string(atoi(exp1.c_str()) / atoi(exp2.c_str())));
+          else
+            error("divide by zero error");
+      }
+    } else {
+      address addr = transInfo.addressGenerator->newTmpAddr();
+      switch (operatorType) {
+        case ADD:result.push_back(createTAC<TACADD>(exp1, exp2, addr));
+          return addr;
+        case MUL:result.push_back(createTAC<TACMUL>(exp1, exp2, addr));
+          return addr;
+        case DIV:result.push_back(createTAC<TACDIV>(exp1, exp2, addr));
+          return addr;
+      }
+    }
+  } else if (operatorType == ASSIGN) {
+    if (!expression2)parseError("unreachable");
+    address addr2 = expression2->toTAC(result, transInfo);
+    address addr1 = expression1->toTAC(result, transInfo);
+    if (addr1 == addrUNDEFINED || addr2 == addrUNDEFINED)parseError("unreachable");
+    if (result.back().op == TACGETARR) {
+      result.back().op = TACSETARR;
+      result.back().ad3 = addr2;
+    } else {
+      result.push_back(createTAC<TACMOV>(addr2, addr1));
+    }
+    return addrUNDEFINED;
+  } else if (operatorType == ARRAY) {
+    if (!expression2)parseError("unreachable");
+    address addr2 = expression2->toTAC(result, transInfo);
+    address addr1 = expression1->toTAC(result, transInfo);
+    if (addr1 == addrUNDEFINED || addr2 == addrUNDEFINED)parseError("unreachable");
+    address addr3 = transInfo.addressGenerator->newTmpAddr();
+    result.push_back(createTAC<TACGETARR>(addr1, addr2, addr3));
+    return addr3;
+  } else
+    parseError("unreachable");
+}
+address ASTLeaf::toTAC(TAClist &result, TransInfo transInfo) {
+  if (valueType == CHAR || valueType == CHARACTER)return address(std::to_string(realValue(value)));
+  if (valueType == STRING)return address(value);
+  if (valueType == INT || valueType == UNSIGNED)return address(value);
+  if (valueType == ID) {
+    auto symbol = symbolTables.back().get(value);
+    std::function<address(std::string, Tokentype)> fun;
+    if (symbol)fun = localName;
+    else {
+      symbol = symbolTables.front().get(value);
+      if (symbol)fun = globalName;
+      else {
+        parseError("unreachable");
+      }
+    }
+    if (symbol->symbolType == VALUE) {
+      auto symbolValue = std::static_pointer_cast<SymbolValue>(symbol);
+      if (symbolValue->isConst)return address(std::to_string(symbolValue->value));
+      return fun(value, symbolValue->valueType);
+    } else if (symbol->symbolType == ARRAY) {
+      auto symbolArray = std::static_pointer_cast<SymbolArray>(symbol);
+      return fun(value, symbolArray->valueType);
+    } else {
+      parseError("unreachable");
+    }
+  }
+  return addrUNDEFINED;
+}
+address ASTRead::toTAC(TAClist &result, TransInfo transInfo) {
+  ASTListOperation(args, [&](std::shared_ptr<AST> ast) {
+    address addr = ast->toTAC(result, transInfo);
+    if (addr[1] == 'i')result.push_back(createTAC<TACREADINT>(addr));
+    else if (addr[1] == 'c')result.push_back(createTAC<TACREADCHAR>(addr));
+    else parseError("unreachable");
+  });
+  return addrUNDEFINED;
+}
+address ASTWrite::toTAC(TAClist &result, TransInfo transInfo) {
+  ASTListOperation(args, [&](std::shared_ptr<AST> ast) {
+    address addr = ast->toTAC(result, transInfo);
+    if (addr[0] == '"') {
+      result.push_back(createTAC<TACDECLARESTRING>(addr));
+      result.push_back(createTAC<TACWRITESTRING>(addr));
+    } else if (isdigit(addr[0]) || addr[0] == '-' || addr[1] == 'i')result.push_back(createTAC<TACWRITEINT>(addr));
+    else if (addr[1] == 'c')result.push_back(createTAC<TACWRITECHAR>(addr));
+    else parseError("unreachable");
+  });
+  return addrUNDEFINED;
+}
+address ASTRet::toTAC(TAClist &result, TransInfo transInfo) {
+  address addr = value->toTAC(result, transInfo);
+  result.push_back(createTAC<TACSETRET>(addr));
+  result.push_back(createTAC<TACJ>(transInfo.returnLabel));
+  return addrUNDEFINED;
+}
+/*
+ * jump table
+ * calculate code
+ * end
+ */
+address ASTSwitch::toTAC(TAClist &result, TransInfo transInfo) {
+  const int CHANGE = 8;
+  std::vector<std::variant<address, TAClist>> cas;
+  auto cnt = ASTListOperation(cases);
+  address val = expression->toTAC(result, transInfo);
+  cnt = ASTListOperation(cases, [&](std::shared_ptr<AST> ast) {
+    TAClist tacList;
+    address addr = ast->toTAC(tacList, transInfo);
+    if (cnt & 1) {
+      cas.emplace_back(tacList);
+    } else {
+      cas.emplace_back(addr);
+    }
+    cnt--;
+  });
+  std::vector<std::pair<int, address>> i2label;// constant label
+  if (cnt == 1) {
+    // only default
+    result.splice(result.end(), std::get<TAClist>(cas[0]));
+  } else {
+    address switchEnd = transInfo.labelGenerator->newLabel();
+    int begin = 0;
+    TAClist calCode;
+    TAClist jumpCode;
+    address defaultLabel = addrUNDEFINED;
+    if (cnt & 1) {
+      begin++;
+      defaultLabel = transInfo.labelGenerator->newLabel();
+      calCode.push_back(createTAC<TACLABEL>(defaultLabel));
+      calCode.splice(calCode.end(), std::get<TAClist>(cas[0]));
+      calCode.push_back(createTAC<TACJ>(switchEnd));
+    } else {
+      defaultLabel = switchEnd;
+    }
+    for (int i = begin; i < cas.size(); i += 2) {
+      address constant = std::get<address>(cas[i]);
+      TAClist tacList = std::get<TAClist>(cas[i + 1]);
+      address label = transInfo.labelGenerator->newLabel();
+      i2label.emplace_back(atoi(constant.c_str()), label);
+      calCode.push_back(createTAC<TACLABEL>(label));
+      calCode.splice(calCode.end(), tacList);
+      calCode.push_back(createTAC<TACJ>(switchEnd));
+    }
+    std::sort(i2label.begin(), i2label.end());
+    if (i2label.size() <= CHANGE) {
+      // linear
+      for (auto[constatnt, label]:i2label) {
+        jumpCode.push_back(createTAC<TACJEQ>(address(std::to_string(constatnt)), val, label));
+      }
+      jumpCode.push_back(createTAC<TACJ>(defaultLabel));
+    } else {
+      // binary search
+      std::function<TAClist(int, int)> work = [&](int l, int r) -> TAClist {
+        TAClist ret;
+        if (l > r) {
+          ret.push_back(createTAC<TACJ>(defaultLabel));
+        } else if (l == r) {
+          ret.push_back(createTAC<TACJEQ>(address(std::to_string(i2label[l].first)), val, i2label[l].second));
+          ret.push_back(createTAC<TACJ>(defaultLabel));
+        } else {
+          int mid = (l + r) / 2;
+          /*
+           * jeq x val eqLabel
+           * jg x val gLabel
+           * jump l mid-1
+           * gLabel
+           * jump mid+1 r
+           */
+          ret.push_back(createTAC<TACJEQ>(address(std::to_string(i2label[mid].first)), val, i2label[mid].second));
+          address gLabel = transInfo.labelGenerator->newLabel();
+          ret.push_back(createTAC<TACJG>(address(std::to_string(i2label[mid].first)), val, gLabel));
+          ret.splice(ret.end(), work(l, mid - 1));
+          ret.push_back(createTAC<TACLABEL>(gLabel));
+          ret.splice(ret.end(), work(mid + 1, r));
+        }
+        return ret;
+      };
+      jumpCode = work(0, i2label.size() - 1);
+    }
+    result.splice(result.end(), jumpCode);
+    result.splice(result.end(), calCode);
+    result.push_back(createTAC<TACLABEL>(switchEnd));
+  }
+  return addrUNDEFINED;
 }

@@ -144,7 +144,7 @@ PARSEMULTITEST (boolean, readBoolean)
 PARSEMULTITEST (condition, readCondition)
 PARSEMULTITEST (loop, readLoop)
 PARSEMULTITEST (switch, readSwitch)
-PARSEMULTITEST (callfun, readCall_fun)
+PARSEMULTITEST (callfun, readCallFun)
 PARSEMULTITEST (read, readRead)
 PARSEMULTITEST (write, readWrite)
 PARSEMULTITEST (return, readReturn)
@@ -307,6 +307,62 @@ SymbolTestNoError(trueWrite)
 SymbolTestNoError(trueRet)
 SymbolTestNoError(trueSwitch)
 
+class TACTest : public Parse, public ::testing::Test {
+ protected:
+  json getSTDJSON(std::string filename) {
+    filename = JSONLOCATION(filename);
+    std::ifstream input(filename);
+    std::string s;
+    getline(input, s);
+    return json::parse(s);
+  }
+  void SetUp() {
+    AST::symbolTables.clear();
+    AST::symbolTables.push_back(SymbolTable());
+  }
+  json getUserJSON(std::string filename) {
+    filename = JSONLOCATION(filename);
+    std::ifstream input(filename);
+    std::string s;
+    getline(input, s);
+    std::shared_ptr<AST> ast = toAST(AST)(json::parse(s));
+    for (std::shared_ptr<AST> now = ast; now; now = now->next)now->check();
+    TransInfo transInfo(std::make_shared<LabelGenerator>(), std::make_shared<AddressGenerator>());
+    TAClist tacList;
+    for (std::shared_ptr<AST> now = ast; now; now = now->next)now->toTAC(tacList, transInfo);
+    json ret;
+    for (auto x:tacList)ret.push_back(x.toJSON());
+    return ret;
+  }
+  void work(std::string code, std::string std) {
+    json stdJSON = getSTDJSON(std);
+    json userJSON = getUserJSON(code);
+    std::string j1 = stdJSON.dump(0);
+    std::string j2 = userJSON.dump(0);
+    ASSERT_EQ(j1, j2);
+    ASSERT_EQ(stdJSON, userJSON);
+  }
+};
+
+#define  TACTEST(x) \
+TEST_F(TACTest,x){\
+  work(std::string("AST")+#x,std::string("TAC")+#x);\
+}
+
+TACTEST(DeclareValue)
+TACTEST(DeclareArray)
+TACTEST(DeclareFun)
+TACTEST(Condition)
+TACTEST(Expression)
+TACTEST(DoubleCondition)
+TACTEST(Loop)
+TACTEST(Call)
+TACTEST(Leaf)
+TACTEST(Read)
+TACTEST(Write)
+TACTEST(Switch)
+
+#undef TACTEST
 #undef PARSEMULTITEST
 #undef PARSESINGLETEST
 #undef TOKENLOCATION

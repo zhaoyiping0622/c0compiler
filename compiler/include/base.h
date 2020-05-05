@@ -66,4 +66,8 @@ class BaseError : public std::exception {
 void error(const char *errorMessage);
 int realValue(std::string s);
 
+// TAC.h
+enum emTACOP:int;
+typedef enum emTACOP TACop;
+
 #endif //COMPILER_COMPILER_INCLUDE_BASE_H_

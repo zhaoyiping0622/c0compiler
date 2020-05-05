@@ -7,5 +7,5 @@ clean:
 	rm $(TOKENS) $(JSONS)
 token/%.token:txt/%.txt txt2token.py
 	python3 txt2token.py $< -o $@
-json/%.json:py/%.py py/AST/AST.py
+json/%.json:py/%.py py/AST/AST.py py/TAC/TAC.py
 	python3 $< > $@

@@ -14,41 +14,156 @@
 
 + character2tokentype中添加
 
-### 代码生成
+### AST类
 
-此目录中的文件主要是为了生成语法分析所需的代码。同时也是对我用正则表达式表示的文法的检测。
++ AST
++ ASTDeclare: AST
++ ASTDeclareFun: ASTDeclare
++ ASTDeclareValue: ASTDeclare
++ ASTDeclareArray: ASTDeclare
++ ASTCondition: AST
++ ASTLoop: AST
++ ASTCall: AST
++ ASTExpression: AST
++ ASTLeaf: AST
++ ASTRead: AST
++ ASTRead: AST
++ ASTWrite: AST
++ ASTRet: AST
++ ASTSwitch: AST
 
-语法分析代码整体架构如下：首先是一个抽象语法树基类，它提供了对后续语义分析、代码生成的接口，然后分别对每一个非终结符（有待商榷）生成一个子类，子类重写一些方法。每个子类可以有多个状态，每个状态对应于一条生成规则，每一条状态通过构造函数的输入，生成相应子类的对象。
+#### AST基类
 
-update1：
+仅含有一个非静态类成员next，以实现链表
 
-现在的想法是将所有代码分为以下几类：
-+ 声明（包括常量、变量、函数声明）
-+ 条件（if else）
-+ 循环（while以及以后可能会支持的for）
-+ 比较（&& || ! == >= <= > < !=）
-+ 运算（+-*/）
-+ 赋值（=）
-+ 函数调用
+静态类成员有`symbolTables`存放当前符号表
 
-对每一类分别建一个类，在前面生成抽象语法树的时候就根据相应情况创建类
+#### ASTDeclare
 
-ntRule.gen()或ParseStateTerminate生成AST
+继承于AST
 
-### 分析
+含有类成员`valueId`表示标识符
 
-<!--
-首先是对我用正则表达式写的文法的分析。由于当时处理文法的时候没有考虑太多，其中的正则表达式有许多不严谨的地方（刚才我就发现了一个），因此需要一个脚本对我写的正则表达式进行检查，以及由正则表达式转化为一般的文法表示。我这里使用到的正则表达式元字符有以下几个：
+#### ASTDeclareFun
 
-+ `*`代表之前出现的元素可以出现零次或多次
-+ `+`代表之前出现的元素可以出现一次或多次
-+ `?`代表之前出现的元素可以出现零次或一次
-+ `()`括号内的东西作为一个整体出现，括号优先级最高
-+ `|`分隔符，表示或，优先级最低
+继承于ASTDeclare
 
-其次这里的语法还有如下要求：
-+ `[]`虽然这里不支持其在正则表达式中的作用，但为了写起来放别，需要表示为中括号的时候需要转义
-+ 在`<>`中的东西代表一个终结符或者非终结符，因此`<>`在表示的时候也需要转义
+用于函数声明
 
-如果需要使用元字符原本的意思，需要转义。
--->
+类成员
++ `returnType` 表示返回类型
++ `args` 参数列表 按照 pair<类型, 标识符> 形成一个vector
++ `body` 函数体，是一个由若干抽象语法树组成的链表
+
+#### ASTDeclareValue
+
+继承于ASTDeclare
+
+用于变量声明
+
+类成员
++ `isConst` 表示变量是否可变
++ `valueType` 变量类型
++ `value` 变量的值 根据文法，只有在变量不可变时这个值为非0，否则为0
+
+#### ASTDeclareArray
+
+继承于ASTDeclare
+
+用于数组声明
+
+类成员
++ `length` 数组长度
++ `valueType` 数组类型
+
+#### ASTCondition
+
+继承于AST
+
+用于if语句
+
+类成员
+
++ `cmp` 比较表达式
++ `thenStatements` 比较为真时执行的语句
++ `elseStatements` 比较为假时执行的语句
+
+#### ASTLoop
+
+继承于AST
+
+用于循环语句
+
+类成员
+
++ `cmp` 比较表达式
++ `body` 比较为真时执行的语句
+
+#### ASTCall
+
+继承于AST
+
+用于函数调用
+
+类成员
+
++ `funName` 调用函数名
++ `args` 参数列表，这是由AST组成的链表
+
+#### ASTExpression
+
+继承于AST
+
+用于表达式
+
+类成员 
++ `operatorType` 运算符，可以是 `+ - * / && || > < != >= <= ! == = []`
++ `expression1` 左表达式
++ `expression2` 右表达式，如果是单目运算符则为空指针NULL或UNDEFINED
+
+#### ASTLeaf
+
+继承于AST
+
+叶子节点
+
+类成员
++ `value` 值
++ `valueType` 叶子节点类型 可以是 ID character integer unsigned 
+
+#### ASTRead
+
+继承于AST
+
+输入函数
+
+类成员
++ `args` 输入的值列表
+
+#### ASTWrite
+
+继承于AST
+
+输出函数
+
+类成员
++ `args` 输出的值列表
+
+#### ASTRet
+
+继承于AST
+
+返回
+
+类成员
++ `value` 返回的值
+
+#### ASTSwitch
+
+继承于AST
+
+switch
+
+类成员
++ `expression` 表达式
++ `cases` case以及执行语句 按照 default -> ASTLeaf -> AST -> ASTLeaf -> AST 排列
