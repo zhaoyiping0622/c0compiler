@@ -654,6 +654,22 @@ bool isAddress(address addr) {
   return addr[0] == 'l' || addr[0] == 'g' || addr[0] == 't';
 }
 
+bool isGlobal(address addr) {
+  return addr[0] == 'g';
+}
+
+bool isString(address addr) {
+  return addr[0] == '"' && addr.back() == '"';
+}
+
+bool isInt(address addr) {
+  return addr[1] == 'i';
+}
+
+bool isChar(address addr) {
+  return addr[1] == 'c';
+}
+
 address ASTDeclareFun::toTAC(TAClist &result, TransInfo transInfo) {
   symbolTables.emplace_back(*(std::dynamic_pointer_cast<SymbolFunction>(symbolTables.front().get(valueId))->funSymbolTable));
   int cnt = 0;
@@ -661,13 +677,12 @@ address ASTDeclareFun::toTAC(TAClist &result, TransInfo transInfo) {
   for (auto[tokentype, argName]:args) {
     switch (tokentype) {
       case INT:argName = localName(argName);
-        result.push_back(createTAC<TACDECLAREINT>(argName));
+        result.push_back(createTAC<TACDECLAREINTARG>(argName));
         break;
       case CHAR:argName = localName(argName, CHAR);
-        result.push_back(createTAC<TACDECLARECHAR>(argName));
+        result.push_back(createTAC<TACDECLARECHARARG>(argName));
         break;
     }
-    result.push_back(createTAC<TACGETARG>(std::to_string(++cnt), argName));
   }
   transInfo.labelGenerator->addLabel(valueId);
   address returnLabel = transInfo.labelGenerator->newLabel();
@@ -761,7 +776,7 @@ address ASTLoop::toTAC(TAClist &result, TransInfo transInfo) {
   return addrUNDEFINED;
 }
 /*
- * 1. cal args
+ * 1. cal args from N to 1
  * 2. call
  * 3. return addrUNDEFINED
  */
@@ -772,6 +787,7 @@ address ASTCall::toTAC(TAClist &result, TransInfo transInfo) {
     auto addr = ast->toTAC(result, transInfo);
     tmp.push_back(createTAC<TACSETARG>(address(std::to_string(++cnt)), addr));
   });
+  tmp.reverse();
   result.splice(result.end(), tmp);
   result.push_back(createTAC<TACCALL>(funName));
   address addr = transInfo.addressGenerator->newTmpAddr();

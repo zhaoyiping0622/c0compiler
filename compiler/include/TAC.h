@@ -11,7 +11,6 @@
 #include "vector"
 #include "token.h"
 #include "json.hpp"
-typedef std::string address;
 extern const address addrUNDEFINED;
 using json = nlohmann::json;
 
@@ -43,6 +42,8 @@ enum emTACOP : int {
   TACWRITESTRING,
   TACDECLAREINT,
   TACDECLARECHAR,
+  TACDECLAREINTARG,
+  TACDECLARECHARARG,
   TACDECLARESTRING,
   TACDECLAREARRAYINT,
   TACDECLAREARRAYCHAR,
@@ -71,8 +72,6 @@ template<TACop tacOp, typename...Types>
 TAC createTAC(Types ...args) {
   return TAC(tacOp, args...);
 }
-
-typedef std::list<TAC> TAClist;
 
 // temporary variable start with `t`
 // global variable start with `g`

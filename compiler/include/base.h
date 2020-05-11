@@ -5,6 +5,14 @@
 #ifndef COMPILER_COMPILER_INCLUDE_BASE_H_
 #define COMPILER_COMPILER_INCLUDE_BASE_H_
 #include "string"
+#include "list"
+
+// TAC.h
+enum emTACOP : int;
+typedef enum emTACOP TACop;
+class TAC;
+typedef std::list<TAC> TAClist;
+typedef std::string address;
 
 // AST.h
 class AST;
@@ -20,6 +28,11 @@ class ASTRead;
 class ASTWrite;
 class ASTRet;
 class ASTSwitch;
+bool isAddress(address addr);
+bool isGlobal(address addr);
+bool isString(address addr);
+bool isInt(address addr);
+bool isChar(address addr);
 
 // config.h
 
@@ -64,10 +77,7 @@ class BaseError : public std::exception {
 
 // other function
 void error(const char *errorMessage);
+void unreachable();
 int realValue(std::string s);
-
-// TAC.h
-enum emTACOP:int;
-typedef enum emTACOP TACop;
 
 #endif //COMPILER_COMPILER_INCLUDE_BASE_H_
