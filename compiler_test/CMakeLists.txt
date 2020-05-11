@@ -2,15 +2,21 @@ find_package(GTest MODULE REQUIRED)
 find_package(Threads REQUIRED)
 
 add_custom_target(
-        rsc
+        parseResources
         COMMAND make
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/parse
 )
 
 add_custom_target(
+        generatorResources
+        COMMAND make
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/generator
+)
+
+add_custom_target(
         mvrsc
         COMMAND cp -r ${CMAKE_CURRENT_SOURCE_DIR}/resources ${CMAKE_CURRENT_BINARY_DIR}/
-        DEPENDS rsc
+        DEPENDS parseResources generatorResources
 )
 
 include_directories(${GTEST_INCLUDE_DIR})
@@ -25,7 +31,9 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "--coverage")
 
 add_executable(compiler_test ${DIR_TESTS} ${DIR_SRC})
 target_link_libraries(compiler_test ${GTEST_BOTH_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-add_dependencies(compiler_test rsc)
+target_link_libraries(compiler_test gmock)
+add_dependencies(compiler_test parseResources)
+add_dependencies(compiler_test generatorResources)
 add_dependencies(compiler_test mvrsc)
 
 enable_testing()

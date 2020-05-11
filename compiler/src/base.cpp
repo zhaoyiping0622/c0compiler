@@ -4,6 +4,9 @@
 void error(const char *errorMessage) {
   throw BaseError(errorMessage);
 }
+void unreachable() {
+  error("unreachable");
+}
 void BaseError::baseOperation() {}
 BaseError::BaseError() {}
 BaseError::BaseError(std::string errorMessage) : errorMessage(errorMessage) {
