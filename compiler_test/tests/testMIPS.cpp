@@ -423,7 +423,7 @@ TEST_F(MIPSTest, getArrChar123) {
   auto acs = translate(tac);
   AssemblyCodes std = {
       addu("$t1", "$t1", "$t2"),
-      lw("$t0", getLocation("$t1", 0))
+      lbu("$t0", getLocation("$t1", 0))
   };
   ASSERT_EQ(acs, std);
 }
@@ -441,7 +441,7 @@ TEST_F(MIPSTest, getArrCharImm) {
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
-      lw("$t0", getLocation("$t1", 2))
+      lbu("$t0", getLocation("$t1", 2))
   };
   ASSERT_EQ(acs, std);
 }
@@ -479,7 +479,7 @@ TEST_F(MIPSTest, setArrChar123) {
   auto acs = translate(tac);
   AssemblyCodes std = {
       addu("$t1", "$t1", "$t2"),
-      sw("$t0", getLocation("$t1", 0))
+      sb("$t0", getLocation("$t1", 0))
   };
   ASSERT_EQ(acs, std);
 }
@@ -518,7 +518,7 @@ TEST_F(MIPSTest, setArrCharImm) {
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
-      sw("$t0", getLocation("$t1", 2))
+      sb("$t0", getLocation("$t1", 2))
   };
   ASSERT_EQ(acs, std);
 }
@@ -1143,6 +1143,7 @@ TEST_F(MIPSTest, DeclareString) {
   translate(tac);
   tac.ad3 = "\"helloworld!\"";
   translate(tac);
+  translate(tac);
   AssemblyCodes std = {
       "s1: .ascii \"helloworld\\0\"",
       "s2: .ascii \"helloworld!\\0\"",
@@ -1197,6 +1198,7 @@ TEST_F(MIPSTest, StackFrame2Args) {
       createTAC<TACLABEL>("main"),
       createTAC<TACDECLAREINTARG>("1", "liarga"),
       createTAC<TACDECLARECHARARG>("2", "lcargb"),
+      createTAC<TACDECLARECHARARG>("3", "lcargc"),
       createTAC<TACDECLAREINT>("lia"),
       createTAC<TACDECLAREINT>("lib"),
       createTAC<TACDECLARECHAR>("lcaa"),
@@ -1215,8 +1217,10 @@ TEST_F(MIPSTest, StackFrame2Args) {
   std::unordered_map<address, int> std = {
       {"liarga", 0},// 0 1 2 3
       {"lcargb", 4},// 4 5 6 7
+      {"lcargc", 8},
       {"arg1", 0},
       {"arg2", 4},
+      {"arg3", 8},
       {"lcaa", -1},
       {"lcab", -2},
       {"lcac", -3},
@@ -1278,14 +1282,15 @@ TEST_F(DefaultMIPSRegisterAllocatorTest, getNewRegister) {
 
 TEST_F(DefaultMIPSRegisterAllocatorTest, putValue2NewRegister1) {
   AssemblyCodes code;
-  ASSERT_EQ(putValue2NewRegister("gia", code, true), "$t0");
+  stackFrame = {{"lia", 4}};
+  ASSERT_EQ(putValue2NewRegister("lia", code, true), "$t0");
   ASSERT_EQ(putValue2NewRegister("gca", code, true), "$t1");
   ASSERT_EQ(putValue2NewRegister("gca", code, false), "$t2");
-  ASSERT_EQ(restoreRegisters["$t0"], std::make_pair(4, (std::string)"gia"));
+  ASSERT_EQ(restoreRegisters["$t0"], std::make_pair(4, getLocation(fp, 4)));
   ASSERT_EQ(restoreRegisters["$t1"], std::make_pair(1, (std::string)"gca"));
   ASSERT_EQ(restoreRegisters.size(), 2);
   AssemblyCodes std = {
-      lw("$t0", "gia"),
+      lw("$t0", getLocation(fp, 4)),
       lbu("$t1", "gca"),
       lbu("$t2", "gca"),
   };
@@ -1352,7 +1357,7 @@ TEST_F(DefaultMIPSRegisterAllocatorTest, buildStackFrame) {
       sw(fp, getLocation(sp, -20 + stackFrame.at("bfp"))),
       subu(fp, sp, 20),
       sw(sp, getLocation(fp, stackFrame.at("bsp"))),
-      move(sp, fp),
+      addu(sp, fp, stackFrame.at("bfp")),
       sw(ra, getLocation(fp, stackFrame.at("bra"))),
       sw("$a0", getLocation(fp, stackFrame.at("arg1"))),
       sw("$a1", getLocation(fp, stackFrame.at("arg2"))),
@@ -1365,6 +1370,7 @@ TEST_F(DefaultMIPSRegisterAllocatorTest, buildStackFrame) {
   ASSERT_EQ(code, std);
 }
 TEST_F(DefaultMIPSRegisterAllocatorTest, afterTAC) {
+  stackFrame = {{"tia", 4}, {"tib", 8}, {"tcc", 9}};
   TAClist tacList = {
       createTAC<TACADD>("tia", "tib", "tcc")
   };
@@ -1376,9 +1382,9 @@ TEST_F(DefaultMIPSRegisterAllocatorTest, afterTAC) {
   code.clear();
   afterTAC(code);
   AssemblyCodes std = {
-      sw("$t0", "tia"),
-      sw("$t1", "tib"),
-      sb("$t2", "tcc"),
+      sw("$t0", getLocation(fp, 4)),
+      sw("$t1", getLocation(fp, 8)),
+      sb("$t2", getLocation(fp, 9)),
   };
   std.sort();
   code.sort();

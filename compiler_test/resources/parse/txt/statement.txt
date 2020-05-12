@@ -11,3 +11,4 @@ printf("1",'1',1,c);
 ;
 switch(a){}
 return a;
+a[b]=b;

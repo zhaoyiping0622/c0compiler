@@ -38,6 +38,7 @@ class Scan : public Tokenizer {
   Token getToken();
   Scan(std::shared_ptr<Config> config);
   Scan(std::istream &input);
+  int lineNumber;
  private:
   bool eof;
   std::istream &input;

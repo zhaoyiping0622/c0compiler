@@ -139,17 +139,10 @@ std::unordered_map<address, int> getStackFrame(TAClist::iterator begin, TAClist:
   int len = 0;
   // begin build arg frame
   std::sort(args.begin(), args.end());// 1 2 3 4 ...
-  int cnt = args.size();
-  while (args.size()) {
-    auto now = args.back().second;
-    args.pop_back();
-    len += 4;
-    ret["arg" + std::to_string(cnt)] = len;
-    ret[now] = len;
-    cnt--;
+  for (int i = 0; i < args.size(); i++) {
+    ret["arg" + std::to_string(i + 1)] = i * 4;
+    ret[args[i].second] = i * 4;
   }
-  if (len % 4)len = (len / 4 + 1) * 4;
-  for (auto&[k, v]:ret)v = len - v;
   // end build arg frame
   len = 0;
   // begin build declared value
@@ -195,11 +188,11 @@ Register DefaultMIPSRegisterAllocator::putValue2NewRegister(address value, Assem
     address addr;
     addr = getAddress(value);
     if (isInt(value)) {
-      assemblyCodes.push_back(lw(reg, value));
-      if (write)restoreRegisters[reg] = {4, value};
+      assemblyCodes.push_back(lw(reg, addr));
+      if (write)restoreRegisters[reg] = {4, addr};
     } else if (isChar(value)) {
-      assemblyCodes.push_back(lbu(reg, value));
-      if (write)restoreRegisters[reg] = {1, value};
+      assemblyCodes.push_back(lbu(reg, addr));
+      if (write)restoreRegisters[reg] = {1, addr};
     } else
       unreachable();
   } else if (isString(value)) {
@@ -235,7 +228,7 @@ void DefaultMIPSRegisterAllocator::afterTAC(AssemblyCodes &assemblyCodes) {
   }
   restoreRegisters.clear();
   usedRegisters.clear();
-  if (now->op == TACLABEL && now->ad3.find_first_of("label") != 0) {
+  if (now->op == TACLABEL && now->ad3.substr(0, 5) != "label") {
     stackFrame = getStackFrame(now, code.end());
     buildStackFrameBegin(assemblyCodes);
   }
@@ -261,7 +254,9 @@ void DefaultMIPSRegisterAllocator::buildStackFrameBegin(AssemblyCodes &assemblyC
   assemblyCodes.push_back(subu(fp, sp, cnt * 4));
   // store sp
   assemblyCodes.push_back(sw(sp, getLocation(fp, stackFrame.at("bsp"))));
-  assemblyCodes.push_back(move(sp, fp));// in the default allocator we do not need to store registers
+  assemblyCodes.push_back(addu(sp,
+                               fp,
+                               stackFrame.at("bfp")));// in the default allocator we do not need to store registers
   // store ra
   assemblyCodes.push_back(sw(ra, getLocation(fp, stackFrame.at("bra"))));
   // store args

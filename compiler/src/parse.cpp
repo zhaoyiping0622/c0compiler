@@ -77,7 +77,11 @@ std::shared_ptr<AST> Parse::readProgram() {
     if (nextToken.tokentype == VOID) {
       auto now = readFunOrMain();
       if (now->valueId == "main")main = false;
-      tail->next = now;
+      if (ret) {
+        tail->next = now;
+      } else {
+        tail = ret = now;
+      }
       valuedeclare = false;
     } else if (nextToken.tokentype == CHAR || nextToken.tokentype == INT) {
       // func or value declare
@@ -93,10 +97,18 @@ std::shared_ptr<AST> Parse::readProgram() {
           if (!valuedeclare)
             parseError("value must be declared before function declare");
           value = readValueDefine(head);
-          tail->next = value;
+          if (ret) {
+            tail->next = value;
+          } else {
+            tail = ret = value;
+          }
           break;
         case LSBRACKETS:func = readFun(head.first, head.second);
-          tail->next = func;
+          if (ret) {
+            tail->next = func;
+          } else {
+            tail = ret = func;
+          }
           valuedeclare = false;
           break;
         default:parseErrorUnexpectedToken(4, SEMICOLON, COMMA, LMBRACKETS, LSBRACKETS);
@@ -473,7 +485,7 @@ std::shared_ptr<AST> Parse::readStatement() {
       nextToken = getToken();
       if (nextToken.tokentype == LSBRACKETS) {
         ret = readCallFun(id);
-      } else if (nextToken.tokentype == ASSIGN) {
+      } else if (nextToken.tokentype == ASSIGN || nextToken.tokentype == LMBRACKETS) {
         ret = readAssign(id);
       }
     }

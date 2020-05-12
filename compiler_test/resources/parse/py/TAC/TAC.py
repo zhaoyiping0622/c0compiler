@@ -132,16 +132,16 @@ def declareChar(ad3) -> TAC:
     return TAC("TACDECLARECHAR", "", "", ad3)
 
 
-def declareCharArg(ad3) -> TAC:
-    return TAC("TACDECLARECHARARG", "", "", ad3)
+def declareCharArg(ad1,ad3) -> TAC:
+    return TAC("TACDECLARECHARARG", ad1, "", ad3)
 
 
 def declareInt(ad3) -> TAC:
     return TAC("TACDECLAREINT", "", "", ad3)
 
 
-def declareIntArg(ad3) -> TAC:
-    return TAC("TACDECLAREINTARG", "", "", ad3)
+def declareIntArg(ad1,ad3) -> TAC:
+    return TAC("TACDECLAREINTARG", ad1, "", ad3)
 
 
 def declareString(ad3) -> TAC:

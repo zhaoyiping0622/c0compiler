@@ -675,12 +675,13 @@ address ASTDeclareFun::toTAC(TAClist &result, TransInfo transInfo) {
   int cnt = 0;
   result.push_back(createTAC<TACLABEL>(valueId));
   for (auto[tokentype, argName]:args) {
+    cnt++;
     switch (tokentype) {
       case INT:argName = localName(argName);
-        result.push_back(createTAC<TACDECLAREINTARG>(argName));
+        result.push_back(createTAC<TACDECLAREINTARG>(std::to_string(cnt), argName));
         break;
       case CHAR:argName = localName(argName, CHAR);
-        result.push_back(createTAC<TACDECLARECHARARG>(argName));
+        result.push_back(createTAC<TACDECLARECHARARG>(std::to_string(cnt), argName));
         break;
     }
   }
@@ -906,16 +907,18 @@ address ASTExpression::toTAC(TAClist &result, TransInfo transInfo) {
       }
     }
   } else if (operatorType == ASSIGN) {
+    TAClist tmp;
     if (!expression2)parseError("unreachable");
     address addr2 = expression2->toTAC(result, transInfo);
-    address addr1 = expression1->toTAC(result, transInfo);
+    address addr1 = expression1->toTAC(tmp, transInfo);
     if (addr1 == addrUNDEFINED || addr2 == addrUNDEFINED)parseError("unreachable");
-    if (result.back().op == TACGETARR) {
-      result.back().op = TACSETARR;
-      result.back().ad3 = addr2;
+    if (tmp.back().op == TACGETARR) {
+      tmp.back().op = TACSETARR;
+      tmp.back().ad3 = addr2;
     } else {
-      result.push_back(createTAC<TACMOV>(addr2, addr1));
+      tmp.push_back(createTAC<TACMOV>(addr2, addr1));
     }
+    result.splice(result.end(),tmp);
     return addrUNDEFINED;
   } else if (operatorType == ARRAY) {
     if (!expression2)parseError("unreachable");

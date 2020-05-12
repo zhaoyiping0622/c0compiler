@@ -17,8 +17,8 @@ printTAClist([
     ret(),
 
     label("funa"),
-    declareIntArg(localName("a")),
-    declareCharArg(localName("b", "char")),
+    declareIntArg("1",localName("a")),
+    declareCharArg("2",localName("b", "char")),
     sub(localName("a"), localName("b", "char"), addresses[1]),
     setRet(addresses[1]),
     j(labels[1]),

@@ -5,12 +5,12 @@ else:
 
 printTAClist([
     label("funa"),
-    declareIntArg(localName("a")),
-    declareCharArg(localName("b", "char")),
+    declareIntArg("1", localName("a")),
+    declareCharArg("2", localName("b", "char")),
     label(getLabel()),
     ret(),
     label("funb"),
-    declareIntArg(localName("a")),
+    declareIntArg("1", localName("a")),
     label(getLabel()),
     ret(),
     label("main"),

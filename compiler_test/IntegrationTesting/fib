@@ -1,0 +1,12 @@
+int FIB[30];
+int getFIB(int x){
+  if(x==0||x==1)return 1;
+  if(FIB[x]!=0) return FIB[x];
+  FIB[x]=getFIB(x-1)+getFIB(x-2);
+  return FIB[x];
+}
+void main(){
+  int n;
+  scanf(n);
+  printf(getFIB(n));
+}

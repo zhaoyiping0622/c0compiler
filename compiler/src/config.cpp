@@ -42,6 +42,14 @@ void Config::configs() {
       .help("open the debug mode")
       .default_value(false)
       .implicit_value(true);
+  program.add_argument("--ast")
+      .default_value(false)
+      .implicit_value(true)
+      .help("output ast in JSON format");
+  program.add_argument("--tac")
+      .default_value(false)
+      .implicit_value(true)
+      .help("output three address code in JSON format");
   program.add_argument("-o", "--output")
       .help("output file name")
       .default_value((std::string)"a.asm");
@@ -49,5 +57,11 @@ void Config::configs() {
 void Config::setValues() {
   inputFileName = program.get<std::string>("file");
   debug = program.get<bool>("--debug");
+  ast = program.get<bool>("--ast");
+  tac = program.get<bool>("--tac");
   outputFileName = program.get<std::string>("--output");
+  if(outputFileName=="a.asm"){
+    if(ast)outputFileName="ast.json";
+    else if(tac)outputFileName="tac.json";
+  }
 }

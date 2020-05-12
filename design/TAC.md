@@ -23,8 +23,8 @@ three address code
 | writestring           | 0    | 0    | 1    | 同上                              |
 | declareChar           | 0    | 0    | 1    | ad3为名字                         |
 | declareInt            | 0    | 0    | 1    | 同上                              |
-| declareCharArg        | 0    | 0    | 1    | 同上                              |
-| declareIntArg         | 0    | 0    | 1    | 同上                              |
+| declareCharArg        | 1    | 0    | 1    | 同上                              |
+| declareIntArg         | 1    | 0    | 1    | 同上                              |
 | declareString         | 0    | 0    | 1    | 同上                              |
 | declareArrayInt       | 1    | 0    | 1    | ad3为名字 ad1为长度               |
 | declareArrayChar      | 1    | 0    | 1    | ad3为名字 ad1为长度               |

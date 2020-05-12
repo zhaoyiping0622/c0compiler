@@ -169,6 +169,9 @@ class MIPSGenerator : public Generator {
       tmp.clear();
     }
     if (data.size()) {
+      data.sort([](AssemblyCode a, AssemblyCode b) {
+        return isInt(a) && isChar(b);
+      });
       data.push_front(".data");
       text.splice(text.end(), data);
     }
@@ -274,14 +277,21 @@ class MIPSGenerator : public Generator {
     Register physicalRegister1 = registerAllocator->putAddress2NewRegister(code.ad1, tmp, false);
     if (isAddress(code.ad2)) {
       Register physicalRegister2 = registerAllocator->putValue2NewRegister(code.ad2, tmp, false);
-      if (isInt(code.ad1))
+      if (isInt(code.ad1)) {
         tmp.push_back(sll(physicalRegister2, physicalRegister2, 2));
-      tmp.push_back(addu(physicalRegister1, physicalRegister1, physicalRegister2));
-      tmp.push_back(lw(physicalRegister3, getLocation(physicalRegister1, 0)));
+        tmp.push_back(addu(physicalRegister1, physicalRegister1, physicalRegister2));
+        tmp.push_back(lw(physicalRegister3, getLocation(physicalRegister1, 0)));
+      } else {
+        tmp.push_back(addu(physicalRegister1, physicalRegister1, physicalRegister2));
+        tmp.push_back(lbu(physicalRegister3, getLocation(physicalRegister1, 0)));
+      }
     } else {
       int offset = atoi(code.ad2.c_str());
-      if (isInt(code.ad1))offset <<= 2;
-      tmp.push_back(lw(physicalRegister3, getLocation(physicalRegister1, offset)));
+      if (isInt(code.ad1)) {
+        offset <<= 2;
+        tmp.push_back(lw(physicalRegister3, getLocation(physicalRegister1, offset)));
+      } else
+        tmp.push_back(lbu(physicalRegister3, getLocation(physicalRegister1, offset)));
     }
     return tmp;
   }
@@ -290,14 +300,19 @@ class MIPSGenerator : public Generator {
     Register physicalRegister1 = registerAllocator->putAddress2NewRegister(code.ad1, tmp, false);
     if (isAddress(code.ad2)) {
       Register physicalRegister2 = registerAllocator->putValue2NewRegister(code.ad2, tmp, false);
-      if (isInt(code.ad1))
+      if (isInt(code.ad1)) {
         tmp.push_back(sll(physicalRegister2, physicalRegister2, 2));
-      tmp.push_back(addu(physicalRegister1, physicalRegister1, physicalRegister2));
-      tmp.push_back(sw(physicalRegister3, getLocation(physicalRegister1, 0)));
+        tmp.push_back(addu(physicalRegister1, physicalRegister1, physicalRegister2));
+        tmp.push_back(sw(physicalRegister3, getLocation(physicalRegister1, 0)));
+      } else {
+        tmp.push_back(addu(physicalRegister1, physicalRegister1, physicalRegister2));
+        tmp.push_back(sb(physicalRegister3, getLocation(physicalRegister1, 0)));
+      }
     } else {
       int offset = atoi(code.ad2.c_str());
       if (isInt(code.ad1))offset <<= 2;
-      tmp.push_back(sw(physicalRegister3, getLocation(physicalRegister1, offset)));
+      if (isInt(code.ad1))tmp.push_back(sw(physicalRegister3, getLocation(physicalRegister1, offset)));
+      else tmp.push_back(sb(physicalRegister3, getLocation(physicalRegister1, offset)));
     }
     return tmp;
   }
@@ -496,8 +511,10 @@ class MIPSGenerator : public Generator {
   }
   std::unordered_map<address, address> stringName;
   address getStringName(address string) {
-    if (!stringName.count(string))
+    if (!stringName.count(string)) {
       stringName[string] = "s" + std::to_string(stringName.size() + 1);
+      data.push_back(stringName[string] + ": .ascii " + string.substr(0, string.size() - 1) + "\\0" + string.back());
+    }
     return stringName[string];
   }
   void initData(TAC tac) {
@@ -510,9 +527,7 @@ class MIPSGenerator : public Generator {
         break;
       case TACDECLAREARRAYCHAR:data.push_back(tac.ad3 + ": .space " + tac.ad1);
         break;
-      case TACDECLARESTRING:
-        data.push_back(
-            getStringName(tac.ad3) + ": .ascii " + tac.ad3.substr(0, tac.ad3.size() - 1) + "\\0" + tac.ad3.back());
+      case TACDECLARESTRING:getStringName(tac.ad3);
         break;
     }
   }

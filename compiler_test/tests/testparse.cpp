@@ -136,6 +136,7 @@ PARSESINGLETEST (main, readMain)
 PARSESINGLETEST (funOrMain, readFunOrMain)
 PARSESINGLETEST (statements, readStatements)
 PARSESINGLETEST (program1, readProgram)
+PARSESINGLETEST (program2, readProgram)
 
 PARSEMULTITEST (valueDeclare, readInFuncValueDeclare)
 PARSEMULTITEST (expression, readExpression)

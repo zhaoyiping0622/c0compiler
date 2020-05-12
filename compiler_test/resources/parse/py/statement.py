@@ -26,5 +26,6 @@ lines.append(ASTWrite(args=string1.copy(char1.copy(num1.copy(c)))))
 lines.append(ASTExpression(operatorType="UNDEFINED"))
 lines.append(ASTSwitch(expression=a))
 lines.append(ASTRet(value=a))
+lines.append(ASTExpression(operatorType="ASSIGN", expression1=Aarrayb, expression2=b))
 
 printLines(lines)

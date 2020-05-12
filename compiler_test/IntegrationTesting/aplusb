@@ -1,0 +1,6 @@
+void main(){
+  int a;
+  int b;
+  scanf(a,b);
+  printf(a+b);
+}

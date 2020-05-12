@@ -17,6 +17,8 @@ class Config {
   std::ofstream outputFile;
   argparse::ArgumentParser program;
   bool debug;
+  bool ast;
+  bool tac;
   Config();
   Config(int, const char *[]);
   void output();

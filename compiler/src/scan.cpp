@@ -84,6 +84,7 @@ void Scan::getNewBuf() {
   pointerLocation = 0;
 }
 void Scan::init() {
+  lineNumber=1;
   getNewBuf();
   pointerLocation = 0;
   eof = false;
@@ -92,6 +93,7 @@ void Scan::init() {
 }
 char Scan::popNextChar() {
   char ret = getNextChar();
+  if(ret=='\n')lineNumber++;
   pointerLocation++;
   return ret;
 }
