@@ -51,6 +51,19 @@ enum emTACOP : int {
   TACUNDEFINED
 };
 
+bool isJump(TAC);
+bool isDeclare(TAC);
+bool isFunctionLabel(address);
+bool isWrite(TAC);
+bool isRead(TAC);
+bool isAddress(address addr);
+bool isGlobal(address addr);
+bool isTmp(address addr);
+bool isLocal(address addr);
+bool isString(address addr);
+bool isInt(address addr);
+bool isChar(address addr);
+
 std::string toString(TACop);
 TACop toTACop(std::string);
 
@@ -66,6 +79,7 @@ class TAC {
   TAC(TACop op, address ad3);
   TAC(TACop op);
   json toJSON();
+  friend bool operator==(const TAC &a, const TAC &b);
 };
 
 template<TACop tacOp, typename...Types>

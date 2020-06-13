@@ -5,6 +5,22 @@
 #include "set"
 
 namespace MIPS {
+/*
+ * caller saved registers t0-t9
+ * callee saved registers s0-s7
+ */
+const std::vector<Register> allCallerSavedRegister = {
+    "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"
+};
+const std::vector<Register> allCalleeSavedRegister = {
+    "$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7"
+};
+bool isCallerSavedRegister(Register reg) {
+  return reg.size() == 3 && reg[0] == '$' && reg[1] == 't' && reg[2] <= '9' && reg[2] >= '0';
+}
+bool isCalleeSavedRegister(Register reg) {
+  return reg.size() == 3 && reg[0] == '$' && reg[1] == 's' && reg[2] <= '7' && reg[2] >= '0';
+}
 const Register sp = "$sp";
 const Register fp = "$fp";
 const Register ra = "$ra";
@@ -79,13 +95,17 @@ AssemblyCode ble(Register src1, int immediate, address addr) op1r1i1r(ble, src1,
 AssemblyCode setLabel(address addr) { return addr + ":"; }
 // syscall
 AssemblyCode syscall() { return "syscall"; }
+// comments
+AssemblyCode comments(std::string message) {
+  return "# " + message;
+}
 #undef op3r
 #undef op2r
 #undef op2r1i
 #undef op1r1i1r
 /* stack frame
  * the first 4 arg is stored in a0-a4 which should be stored in stack
- * sp-before(bsp)->| tmp valueN        |
+ * sp-before(bsp)->| restore registerN |
  *                 | ....              |
  *                 | arg4              |
  *                 | arg3              |
@@ -204,10 +224,9 @@ Register DefaultMIPSRegisterAllocator::putValue2NewRegister(address value, Assem
   }
   return reg;
 }
-Register DefaultMIPSRegisterAllocator::putAddress2NewRegister(address value, AssemblyCodes &assemblyCodes, bool write) {
+Register DefaultMIPSRegisterAllocator::putAddress2NewRegister(address value, AssemblyCodes &assemblyCodes) {
   Register reg = getNewRegister();
   address addr;
-  if (write)unreachable();
   if (isAddress(value) || isString(value)) {
     addr = getAddress(value);
   } else {
@@ -228,7 +247,7 @@ void DefaultMIPSRegisterAllocator::afterTAC(AssemblyCodes &assemblyCodes) {
   }
   restoreRegisters.clear();
   usedRegisters.clear();
-  if (now->op == TACLABEL && now->ad3.substr(0, 5) != "label") {
+  if (now->op == TACLABEL && isFunctionLabel(now->ad3)) {
     stackFrame = getStackFrame(now, code.end());
     buildStackFrameBegin(assemblyCodes);
   }
@@ -248,7 +267,7 @@ Register DefaultMIPSRegisterAllocator::getNewRegister() {
 }
 void DefaultMIPSRegisterAllocator::buildStackFrameBegin(AssemblyCodes &assemblyCodes) {
   int cnt = 0;
-  for (auto[k, v]:stackFrame)if (k.find_first_of("arg") == 0)cnt++;
+  for (auto[k, v]:stackFrame)if (k.find("arg") == 0)cnt++;
   // store fp
   assemblyCodes.push_back(sw(fp, getLocation(sp, -cnt * 4 + stackFrame.at("bfp"))));
   assemblyCodes.push_back(subu(fp, sp, cnt * 4));
@@ -279,9 +298,9 @@ address DefaultMIPSRegisterAllocator::getStringName(address string) {
     stringName[string] = "s" + std::to_string(stringName.size() + 1);
   return stringName[string];
 }
-Register DefaultMIPSRegisterAllocator::putValue2Location(address value,
-                                                         Register physicalRegister,
-                                                         AssemblyCodes &assemblyCodes) {
+void DefaultMIPSRegisterAllocator::putRegister2Address(address value,
+                                                       Register physicalRegister,
+                                                       AssemblyCodes &assemblyCodes) {
   if (isAddress(value)) {
     address addr = getAddress(value);
     if (isInt(value)) {
@@ -292,7 +311,6 @@ Register DefaultMIPSRegisterAllocator::putValue2Location(address value,
   } else {
     unreachable();
   }
-  return physicalRegister;
 }
 address DefaultMIPSRegisterAllocator::getAddress(address value) {
   if (isString(value))return getStringName(value);

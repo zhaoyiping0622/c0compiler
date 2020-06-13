@@ -49,8 +49,8 @@ class SymbolTable {
 class SymbolValue : public Symbol {
  public:
   Tokentype valueType;
-  bool isConst{};
-  int value{};
+  bool isConst;
+  int value;
   SymbolValue(Tokentype valueType, bool isConst = false, int value = 0);
   SymbolValue();
   bool operator==(const SymbolValue &other) const;

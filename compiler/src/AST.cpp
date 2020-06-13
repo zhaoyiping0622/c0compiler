@@ -650,26 +650,6 @@ address localName(std::string name, Tokentype tokentype = INT) {
   return address(addr);
 }
 
-bool isAddress(address addr) {
-  return addr[0] == 'l' || addr[0] == 'g' || addr[0] == 't';
-}
-
-bool isGlobal(address addr) {
-  return addr[0] == 'g';
-}
-
-bool isString(address addr) {
-  return addr[0] == '"' && addr.back() == '"';
-}
-
-bool isInt(address addr) {
-  return addr[1] == 'i';
-}
-
-bool isChar(address addr) {
-  return addr[1] == 'c';
-}
-
 address ASTDeclareFun::toTAC(TAClist &result, TransInfo transInfo) {
   symbolTables.emplace_back(*(std::dynamic_pointer_cast<SymbolFunction>(symbolTables.front().get(valueId))->funSymbolTable));
   int cnt = 0;
@@ -918,7 +898,7 @@ address ASTExpression::toTAC(TAClist &result, TransInfo transInfo) {
     } else {
       tmp.push_back(createTAC<TACMOV>(addr2, addr1));
     }
-    result.splice(result.end(),tmp);
+    result.splice(result.end(), tmp);
     return addrUNDEFINED;
   } else if (operatorType == ARRAY) {
     if (!expression2)parseError("unreachable");
@@ -1068,7 +1048,7 @@ address ASTSwitch::toTAC(TAClist &result, TransInfo transInfo) {
         }
         return ret;
       };
-      jumpCode = work(0, i2label.size() - 1);
+      jumpCode = work(0, static_cast<int>(i2label.size()) - 1);
     }
     result.splice(result.end(), jumpCode);
     result.splice(result.end(), calCode);

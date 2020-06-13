@@ -7,9 +7,11 @@ build
 design/scan/cpp
 design/scan/dot
 design/scan/png
+design/scan/ps
 tmp*
 CMakeSettings.json
 compiler_test/resources/parse/json
 compiler_test/resources/parse/token
 Testing
 __pycache__
+compilerGraph

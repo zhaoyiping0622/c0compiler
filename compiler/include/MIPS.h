@@ -16,6 +16,10 @@ namespace MIPS {
 extern const Register sp;
 extern const Register fp;
 extern const Register ra;
+extern const std::vector<Register> allCallerSavedRegister;
+extern const std::vector<Register> allCalleeSavedRegister;
+bool isCallerSavedRegister(Register);
+bool isCalleeSavedRegister(Register);
 address getLocation(Register reg, int offset);
 address getLocation(Register reg, address offset);
 // load
@@ -79,6 +83,8 @@ AssemblyCode ble(Register src1, int immediate, address addr);
 AssemblyCode setLabel(address addr);
 // syscall
 AssemblyCode syscall();
+// comments
+AssemblyCode comments(std::string message);
 /* stack frame
  * the first 4 arg is stored in a0-a4 which should be stored in stack
  * sp-before(bsp)->| restore registerN |
@@ -120,10 +126,10 @@ class DefaultMIPSRegisterAllocator : public RegisterAllocator {
   DefaultMIPSRegisterAllocator();
   DefaultMIPSRegisterAllocator(TAClist code);
   Register putValue2NewRegister(address value, AssemblyCodes &assemblyCodes, bool write) override;
-  Register putAddress2NewRegister(address value, AssemblyCodes &assemblyCodes, bool write) override;
-  Register putValue2Location(address value, Register physicalRegister, AssemblyCodes &assemblyCodes) override;
-  void beforeTAC(AssemblyCodes &assemblyCodes);
-  void afterTAC(AssemblyCodes &assemblyCodes);
+  Register putAddress2NewRegister(address value, AssemblyCodes &assemblyCodes) override;
+  void putRegister2Address(address addr, Register physicalRegister, AssemblyCodes &assemblyCodes) override;
+  void beforeTAC(AssemblyCodes &assemblyCodes) override;
+  void afterTAC(AssemblyCodes &assemblyCodes) override;
  protected:
   AssemblyCodes data;
   TAClist::iterator now;
@@ -144,8 +150,12 @@ class MIPSGenerator : public Generator {
   MIPSGenerator() {
     inFunction = false;
   }
+  template<typename ...Args>
+  void initRegisterAllocator(Args ...args) {
+    registerAllocator = std::make_unique<RegisterAllocator_>(args...);
+  }
   AssemblyCodes translate(TAClist tacList) {
-    registerAllocator = std::make_unique<RegisterAllocator_>(tacList);
+    if (!registerAllocator) initRegisterAllocator(tacList);
     AssemblyCodes thisFunction;
     text.push_back(".text");
     text.push_back(jal("main"));
@@ -181,6 +191,7 @@ class MIPSGenerator : public Generator {
   AssemblyCodes text;
   AssemblyCodes data;
   bool inFunction;
+  // only add never remove
   AssemblyCodes translate(TAC tac) {
     switch (tac.op) {
       case TACADD: return translateAdd(tac);
@@ -265,16 +276,18 @@ class MIPSGenerator : public Generator {
     return tmp;
   }
   AssemblyCodes translateMov(TAC code) {
-    Register physicalRegister3 = registerAllocator->putValue2NewRegister(code.ad3, tmp, true);
-    if (isAddress(code.ad1))
-      tmp.push_back(move(physicalRegister3, registerAllocator->putValue2NewRegister(code.ad1, tmp, false)));
-    else
+    if (isAddress(code.ad1)) {
+      Register physicalRegister1 = registerAllocator->putValue2NewRegister(code.ad1, tmp, false);
+      registerAllocator->putRegister2Address(code.ad1, physicalRegister1, tmp);
+    } else {
+      Register physicalRegister3 = registerAllocator->putValue2NewRegister(code.ad3, tmp, true);
       tmp.push_back(li(physicalRegister3, code.ad1));
+    }
     return tmp;
   }
   AssemblyCodes translateGetArr(TAC code) {
     Register physicalRegister3 = registerAllocator->putValue2NewRegister(code.ad3, tmp, true);
-    Register physicalRegister1 = registerAllocator->putAddress2NewRegister(code.ad1, tmp, false);
+    Register physicalRegister1 = registerAllocator->putAddress2NewRegister(code.ad1, tmp);
     if (isAddress(code.ad2)) {
       Register physicalRegister2 = registerAllocator->putValue2NewRegister(code.ad2, tmp, false);
       if (isInt(code.ad1)) {
@@ -297,7 +310,7 @@ class MIPSGenerator : public Generator {
   }
   AssemblyCodes translateSetArr(TAC code) {
     Register physicalRegister3 = registerAllocator->putValue2NewRegister(code.ad3, tmp, false);
-    Register physicalRegister1 = registerAllocator->putAddress2NewRegister(code.ad1, tmp, false);
+    Register physicalRegister1 = registerAllocator->putAddress2NewRegister(code.ad1, tmp);
     if (isAddress(code.ad2)) {
       Register physicalRegister2 = registerAllocator->putValue2NewRegister(code.ad2, tmp, false);
       if (isInt(code.ad1)) {
@@ -450,14 +463,14 @@ class MIPSGenerator : public Generator {
     } else {
       argLen -= 4;
       Register physicalRegister = registerAllocator->putValue2NewRegister(code.ad3, tmp, false);
+      // TODO: may need change(add registerAllocator API)
       tmp.push_back(sw(physicalRegister, getLocation(sp, argLen)));
     }
     return tmp;
   }
   AssemblyCodes translateGetArg(TAC code) {
-    int offset = atoi(code.ad1.c_str()) * 4 - 4;
-    Register physicalRegister = registerAllocator->putValue2NewRegister(code.ad3, tmp, true);
-    tmp.push_back(lw(physicalRegister, getLocation(fp, offset)));
+    Register physicalRegister = registerAllocator->putValue2NewRegister("arg" + code.ad1, tmp, false);
+    registerAllocator->putRegister2Address(code.ad3, physicalRegister, tmp);
     return tmp;
   }
   AssemblyCodes translateJ(TAC code) {
@@ -467,13 +480,13 @@ class MIPSGenerator : public Generator {
   AssemblyCodes translateReadInt(TAC code) {
     tmp.push_back(li("$v0", "5"));
     tmp.push_back(syscall());
-    registerAllocator->putValue2Location(code.ad3, "$v0", tmp);
+    registerAllocator->putRegister2Address(code.ad3, "$v0", tmp);
     return tmp;
   }
   AssemblyCodes translateReadChar(TAC code) {
     tmp.push_back(li("$v0", "12"));
     tmp.push_back(syscall());
-    registerAllocator->putValue2Location(code.ad3, "$v0", tmp);
+    registerAllocator->putRegister2Address(code.ad3, "$v0", tmp);
     return tmp;
   }
   AssemblyCodes translateWriteInt(TAC code) {
@@ -499,7 +512,7 @@ class MIPSGenerator : public Generator {
     return tmp;
   }
   AssemblyCodes translateWriteString(TAC code) {
-    Register physicalRegister = registerAllocator->putAddress2NewRegister(code.ad3, tmp, false);
+    Register physicalRegister = registerAllocator->putAddress2NewRegister(code.ad3, tmp);
     tmp.push_back(move("$a0", physicalRegister));
     tmp.push_back(li("$v0", "4"));
     tmp.push_back(syscall());

@@ -13,6 +13,11 @@ typedef enum emTACOP TACop;
 class TAC;
 typedef std::list<TAC> TAClist;
 typedef std::string address;
+bool isAddress(address addr);
+bool isGlobal(address addr);
+bool isString(address addr);
+bool isInt(address addr);
+bool isChar(address addr);
 
 // AST.h
 class AST;
@@ -28,11 +33,6 @@ class ASTRead;
 class ASTWrite;
 class ASTRet;
 class ASTSwitch;
-bool isAddress(address addr);
-bool isGlobal(address addr);
-bool isString(address addr);
-bool isInt(address addr);
-bool isChar(address addr);
 
 // config.h
 

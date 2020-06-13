@@ -25,7 +25,6 @@ class AST {
   /*
    * return INT CHAR ARRAY UNDEFINED BOOL
    * may ASTLeaf can return STRING but it should only be used in write
-   * (TODO: special judge in write)
    */
   virtual Tokentype check() = 0;
   AST();

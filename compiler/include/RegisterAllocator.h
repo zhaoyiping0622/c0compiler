@@ -25,9 +25,9 @@ class RegisterAllocator {
    * return $t0-$t9 $s0-$s7
    */
   virtual Register putValue2NewRegister(address value, AssemblyCodes &assemblyCodes, bool write) = 0;
-  virtual Register putAddress2NewRegister(address addr, AssemblyCodes &assemblyCodes, bool write) = 0;
+  virtual Register putAddress2NewRegister(address addr, AssemblyCodes &assemblyCodes) = 0;
   // from physicalRegister to the location of value
-  virtual Register putValue2Location(address value, Register physicalRegister, AssemblyCodes &assemblyCodes) = 0;
+  virtual void putRegister2Address(address addr, Register physicalRegister, AssemblyCodes &assemblyCodes) = 0;
   virtual void beforeTAC(AssemblyCodes &assemblyCodes) = 0;
   virtual void afterTAC(AssemblyCodes &assemblyCodes) = 0;
   virtual ~RegisterAllocator() {}

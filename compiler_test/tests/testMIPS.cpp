@@ -18,8 +18,8 @@ class MockRegisterAllocator : public RegisterAllocator {
   MockRegisterAllocator() {}
   MockRegisterAllocator(TAClist tacList) : RegisterAllocator(tacList) {}
   MOCK_METHOD3(putValue2NewRegister, Register(address, AssemblyCodes & , bool));
-  MOCK_METHOD3(putAddress2NewRegister, Register(address, AssemblyCodes & , bool));
-  MOCK_METHOD3(putValue2Location, Register(address, Register, AssemblyCodes & ));
+  MOCK_METHOD2(putAddress2NewRegister, Register(address, AssemblyCodes & ));
+  MOCK_METHOD3(putRegister2Address, void(address, Register, AssemblyCodes & ));
   MOCK_METHOD1(beforeTAC, void(AssemblyCodes&));
   MOCK_METHOD1(afterTAC, void(AssemblyCodes&));
 };
@@ -361,14 +361,12 @@ TEST_F(MIPSTest, mov12) {
   tac.op = TACMOV;
   tac.ad1 = "gia";
   tac.ad3 = "gic";
-  EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, true))
-      .WillOnce(Return("$t0"));
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, false))
-      .WillOnce(Return("$t1"));
+      .WillOnce(Return("$t0"));
+  EXPECT_CALL((*mock_register_allocator), putRegister2Address(tac.ad1, "$t0", _))
+      .Times(1);
   auto acs = translate(tac);
-  ASSERT_EQ(acs.size(), 1);
-  auto ac = *acs.begin();
-  ASSERT_EQ(ac, move("$t0", "$t1"));
+  ASSERT_EQ(acs.size(), 0);
 }
 
 TEST_F(MIPSTest, movimm) {
@@ -396,7 +394,7 @@ TEST_F(MIPSTest, getArrInt123) {
       .WillOnce(Return("$t0"));
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, false))
       .WillOnce(Return("$t2"));
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _))
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
@@ -418,7 +416,7 @@ TEST_F(MIPSTest, getArrChar123) {
       .WillOnce(Return("$t0"));
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, false))
       .WillOnce(Return("$t2"));
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _))
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
@@ -437,7 +435,7 @@ TEST_F(MIPSTest, getArrCharImm) {
   tac.ad3 = "gic";
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, true))
       .WillOnce(Return("$t0"));
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _))
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
@@ -455,7 +453,7 @@ TEST_F(MIPSTest, getArrIntImm) {
   tac.ad3 = "gic";
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, true))
       .WillOnce(Return("$t0"));
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _))
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
@@ -474,7 +472,7 @@ TEST_F(MIPSTest, setArrChar123) {
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, false))
       .WillOnce(Return("$t0"))
       .WillOnce(Return("$t2"));
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _))
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
@@ -494,7 +492,7 @@ TEST_F(MIPSTest, setArrInt123) {
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, false))
       .WillOnce(Return("$t0"))
       .WillOnce(Return("$t2"));
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _))
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
@@ -514,7 +512,7 @@ TEST_F(MIPSTest, setArrCharImm) {
   tac.ad3 = "gic";
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, false))
       .WillOnce(Return("$t0"));
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _))
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
@@ -532,7 +530,7 @@ TEST_F(MIPSTest, setArrIntImm) {
   tac.ad3 = "gic";
   EXPECT_CALL((*mock_register_allocator), putValue2NewRegister(_, _, false))
       .WillOnce(Return("$t0"));
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister(_, _))
       .WillOnce(Return("$t1"));
   auto acs = translate(tac);
   AssemblyCodes std = {
@@ -947,9 +945,11 @@ TEST_F(MIPSTest, SetArgGe5) {
 
 TEST_F(MIPSTest, GetArg) {
   auto mock_register_allocator = registerMock();
-  EXPECT_CALL(*mock_register_allocator, putValue2NewRegister(_, _, true))
+  EXPECT_CALL(*mock_register_allocator, putValue2NewRegister(_, _, false))
       .WillOnce(Return("$t0"))
       .WillOnce(Return("$t0"));
+  EXPECT_CALL(*mock_register_allocator, putRegister2Address(_, "$t0", _))
+      .Times(2);
   TAC tac;
   tac.op = TACGETARG;
   tac.ad3 = "gia";
@@ -957,10 +957,7 @@ TEST_F(MIPSTest, GetArg) {
   auto acs = translate(tac);
   tac.ad1 = "2";
   acs = translate(tac);
-  AssemblyCodes std = {
-      lw("$t0", getLocation(fp, 0)),
-      lw("$t0", getLocation(fp, 4))
-  };
+  AssemblyCodes std = {};
   ASSERT_EQ(acs, std);
 }
 
@@ -980,8 +977,8 @@ TEST_F(MIPSTest, ReadInt) {
   TAC tac;
   tac.op = TACREADINT;
   tac.ad3 = "gia";
-  EXPECT_CALL((*mock_register_allocator), putValue2Location("gia", "$v0", _))
-      .WillOnce(Return("$t0"));
+  EXPECT_CALL((*mock_register_allocator), putRegister2Address("gia", "$v0", _))
+      .Times(1);
   auto acs = translate(tac);
   AssemblyCodes std = {
       li("$v0", "5"),
@@ -995,8 +992,8 @@ TEST_F(MIPSTest, ReadChar) {
   TAC tac;
   tac.op = TACREADCHAR;
   tac.ad3 = "gca";
-  EXPECT_CALL((*mock_register_allocator), putValue2Location("gca", "$v0", _))
-      .WillOnce(Return("$t0"));
+  EXPECT_CALL((*mock_register_allocator), putRegister2Address("gca", "$v0", _))
+      .Times(1);
   auto acs = translate(tac);
   AssemblyCodes std = {
       li("$v0", "12"),
@@ -1065,7 +1062,7 @@ TEST_F(MIPSTest, WriteCharImm) {
 
 TEST_F(MIPSTest, WriteString) {
   auto mock_register_allocator = registerMock();
-  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister("\"helloworld\"", _, false))
+  EXPECT_CALL((*mock_register_allocator), putAddress2NewRegister("\"helloworld\"", _))
       .WillOnce(Return("$t0"));
   TAC tac;
   tac.op = TACWRITESTRING;
@@ -1312,28 +1309,29 @@ TEST_F(DefaultMIPSRegisterAllocatorTest, putValue2NewRegister2) {
 }
 TEST_F(DefaultMIPSRegisterAllocatorTest, putAddress2NewRegister) {
   AssemblyCodes code;
-  ASSERT_EQ(putAddress2NewRegister("\"helloworld\"", code, false), "$t0");
-  ASSERT_EQ(putAddress2NewRegister("gia", code, false), "$t1");
+  ASSERT_EQ(putAddress2NewRegister("\"helloworld\"", code), "$t0");
+  ASSERT_EQ(putAddress2NewRegister("gia", code), "$t1");
   AssemblyCodes std = {
       la("$t0", "s1"),
       la("$t1", "gia"),
   };
   ASSERT_EQ(std, code);
   usedRegisters.clear();
-  ASSERT_THROW(putAddress2NewRegister("gia", code, true), BaseError);
-  ASSERT_THROW(putAddress2NewRegister("12", code, false), BaseError);
+  ASSERT_THROW(putAddress2NewRegister("12", code), BaseError);
 }
-TEST_F(DefaultMIPSRegisterAllocatorTest, putValue2Location) {
+TEST_F(DefaultMIPSRegisterAllocatorTest, putRegister2Address) {
   AssemblyCodes code;
-  ASSERT_EQ(putValue2Location("gia", "$t0", code), "$t0");
-  ASSERT_EQ(putValue2Location("gca", "$t1", code), "$t1");
+  putRegister2Address("gia", "$t0", code);
+  putRegister2Address("gca", "$t1", code);
   AssemblyCodes std = {
       sw("$t0", "gia"),
       sb("$t1", "gca"),
   };
   ASSERT_EQ(code, std);
-  ASSERT_THROW(putValue2Location("\"helloworld\"", "$t0", code), BaseError);
-  ASSERT_THROW(putValue2Location("1", "$t0", code), BaseError);
+  // is string
+  ASSERT_THROW(putRegister2Address("\"helloworld\"", "$t0", code), BaseError);
+  // is immediate
+  ASSERT_THROW(putRegister2Address("1", "$t0", code), BaseError);
 }
 TEST_F(DefaultMIPSRegisterAllocatorTest, buildStackFrame) {
   AssemblyCodes code;

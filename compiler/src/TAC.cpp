@@ -35,6 +35,9 @@ json TAC::toJSON() {
   else ret["ad3"] = "";
   return ret;
 }
+bool operator==(const TAC &a, const TAC &b) {
+  return a.op == b.op && a.ad1 == b.ad1 && a.ad2 == b.ad2 && a.ad3 == b.ad3;
+}
 AddressGenerator::AddressGenerator() : tmpCnt(0) {
   allAddress.clear();
 }
@@ -159,4 +162,63 @@ TACop toTACop(std::string s) {
   if (ma.count(s))
     return ma[s];
   return TACUNDEFINED;
+}
+bool isJump(TAC tac) {
+  return tac.op == TACJ ||
+      tac.op == TACJL ||
+      tac.op == TACJLE ||
+      tac.op == TACJG ||
+      tac.op == TACJGE ||
+      tac.op == TACJNE ||
+      tac.op == TACJEQ;
+}
+bool isWrite(TAC tac) {
+  return tac.op == TACWRITEINT || tac.op == TACWRITESTRING || tac.op == TACWRITECHAR;
+}
+bool isRead(TAC tac){
+  return tac.op==TACREADINT||tac.op==TACREADCHAR;
+}
+bool isFunctionLabel(address label) {
+  return label.substr(0, 5) != "label";
+}
+bool isRead(address addr);
+bool isDeclare(TAC tac) {
+  switch (tac.op) {
+    case TACDECLAREINT:
+    case TACDECLARECHAR:
+    case TACDECLAREINTARG:
+    case TACDECLARECHARARG:
+    case TACDECLAREARRAYINT:
+    case TACDECLAREARRAYCHAR:
+    case TACDECLARESTRING:return true;
+    default:return false;
+  }
+}
+
+bool isAddress(address addr) {
+  return addr[0] == 'l' || addr[0] == 'g' || addr[0] == 't';
+}
+
+bool isGlobal(address addr) {
+  return addr[0] == 'g';
+}
+
+bool isTmp(address addr) {
+  return addr[0] == 't';
+}
+
+bool isLocal(address addr) {
+  return addr[0] == 'l';
+}
+
+bool isString(address addr) {
+  return addr[0] == '"' && addr.back() == '"';
+}
+
+bool isInt(address addr) {
+  return addr[1] == 'i';
+}
+
+bool isChar(address addr) {
+  return addr[1] == 'c';
 }
