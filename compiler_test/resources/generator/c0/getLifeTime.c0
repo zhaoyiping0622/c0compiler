@@ -1,0 +1,16 @@
+int a;
+int b(){
+  return 1;
+}
+int funa(int b,char c){
+  int d[100];
+  int tmp;
+  scanf(tmp);
+  d[10]=tmp;
+  d[11]=d[10]+a-b*c/d[10];
+  tmp=a;
+  tmp=b();
+  printf(tmp,c,"helloworld");
+  return a;
+}
+void main(){}

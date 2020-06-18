@@ -896,6 +896,7 @@ address ASTExpression::toTAC(TAClist &result, TransInfo transInfo) {
       tmp.back().op = TACSETARR;
       tmp.back().ad3 = addr2;
     } else {
+      // TODO: make the result of expression2 be addr1
       tmp.push_back(createTAC<TACMOV>(addr2, addr1));
     }
     result.splice(result.end(), tmp);

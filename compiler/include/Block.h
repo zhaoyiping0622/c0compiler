@@ -91,9 +91,4 @@ class Blocks {
   std::shared_ptr<Block> operator[](int index) ;
 };
 
-class BlockOptimizer {
- public:
-  void optimize(std::shared_ptr<Block>);
-};
-
 #endif //COMPILER_COMPILER_INCLUDE_BLOCK_H_

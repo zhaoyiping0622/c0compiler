@@ -22,8 +22,11 @@ Register LifeTimeRegisterAllocator::putValue2NewRegister(address value, Assembly
       // change to a new register
       register2Values[physicalRegister].erase(value);
       value2Register.erase(value);
-    } else
+    } else {
+      if (write && changed.count(value) == 0)
+        changed.insert(value);
       return value2Register[value];
+    }
   }
   if (value == "0")return "$0";
   physicalRegister = getNewRegister(assemblyCodes);
@@ -31,12 +34,11 @@ Register LifeTimeRegisterAllocator::putValue2NewRegister(address value, Assembly
     address addr = getAddress(value);
     if (isInt(value)) {
       assemblyCodes.push_back(lw(physicalRegister, addr));
-      if (write)changed.insert(value);
     } else if (isChar(value)) {
       assemblyCodes.push_back(lbu(physicalRegister, addr));
-      if (write)changed.insert(value);
     } else
       unreachable();
+    if (write)changed.insert(value);
     value2Register[value] = physicalRegister;
   } else if (isString(value))
     unreachable();
@@ -92,7 +94,6 @@ void LifeTimeRegisterAllocator::beforeTAC(AssemblyCodes &assemblyCodes) {
   if (tac.op == TACDECLAREINTARG || tac.op == TACDECLARECHARARG) {
     argCnt++;
     stackFrame[tac.ad3] = (2 + argCnt) * 4;
-    stackFrame["arg" + std::to_string(argCnt)] = (2 + argCnt) * 4;
   }
   // declareArray
   if (tac.op == TACDECLAREARRAYCHAR || tac.op == TACDECLAREARRAYINT) {
@@ -146,25 +147,28 @@ void LifeTimeRegisterAllocator::getLifeTime() {
     if (isRead(*rit) || (isWrite(*rit) && rit->op != TACWRITESTRING)) {
       lifeTime[rit->ad3].push_back(num);
     }
+    if (isJump(*rit) && rit->op != TACJ) {
+      lifeTime[rit->ad1].push_back(num);
+      lifeTime[rit->ad2].push_back(num);
+      continue;
+    }
     switch (rit->op) {
       case TACADD:
       case TACSUB:
       case TACMUL:
-      case TACDIV:lifeTime[rit->ad1].push_back(num);
+      case TACDIV:
+      case TACGETARR:
+      case TACSETARR:lifeTime[rit->ad1].push_back(num);
         lifeTime[rit->ad2].push_back(num);
         lifeTime[rit->ad3].push_back(num);
         continue;
       case TACMOV:lifeTime[rit->ad1].push_back(num);
         lifeTime[rit->ad3].push_back(num);
         continue;
-      case TACGETARR:
-      case TACSETARR:lifeTime[rit->ad2].push_back(num);
-        lifeTime[rit->ad3].push_back(num);
-        continue;
-      case TACSETRET:
-      case TACGETRET:
       case TACSETARG:
-      case TACGETARG:lifeTime[rit->ad3].push_back(num);
+      case TACGETARG:
+      case TACSETRET:
+      case TACGETRET:lifeTime[rit->ad3].push_back(num);
         continue;
     }
   }
@@ -288,6 +292,7 @@ void LifeTimeRegisterAllocator::enterBlock() {
   codeNumber = 0;
 }
 void LifeTimeRegisterAllocator::storeCallerRegister(AssemblyCodes &assemblyCodes) {
+  // TODO: some global value need to be release
   for (auto reg:allCallerSavedRegister) {
     if (unusedCallerRegisters.count(reg) == 0) {
       callerRegisters[reg] = (int)callerRegisters.size() + 1;
@@ -305,6 +310,7 @@ void LifeTimeRegisterAllocator::loadCallerRegister(AssemblyCodes &assemblyCodes)
   callerRegisters.clear();
 }
 Register LifeTimeRegisterAllocator::getNewRegister(AssemblyCodes &assemblyCodes) {
+  // TODO: find a unused register first
   auto cmp = [&](Register register1, Register register2) {
     auto getMin = [&](Register reg) {
       int value1 = (int)blocks[nowBlock]->codes.size();
@@ -374,4 +380,5 @@ Register LifeTimeRegisterAllocator::releaseRegister(address value, AssemblyCodes
   register2Values[restoreRegister].erase(value);
   return restoreRegister;
 }
+LifeTimeRegisterAllocator::LifeTimeRegisterAllocator() {}
 

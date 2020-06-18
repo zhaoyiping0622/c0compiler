@@ -12,6 +12,8 @@ tmp*
 CMakeSettings.json
 compiler_test/resources/parse/json
 compiler_test/resources/parse/token
+compiler_test/resources/generator/tacJSON
+compiler_test/resources/generator/tac
 Testing
 __pycache__
 compilerGraph

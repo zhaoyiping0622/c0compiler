@@ -67,9 +67,10 @@ void Block::join(const std::unordered_set<address> &otherLiveOut) {
   for (auto addr:otherLiveOut)
     LiveOut.insert(addr);
 }
+// TODO: may need to create DAG entirely
 void Block::DAGOptimize() {
   std::unordered_map<address, int> localLabel;
-  std::unordered_map<DAGEdge, address> edge2Address;
+  std::unordered_map<DAGEdge, std::pair<address, int>> edge2Address;
   auto update = [&](address addr) {
     localLabel[addr] += 1;
   };
@@ -98,17 +99,18 @@ void Block::DAGOptimize() {
       edge.ad2 = code.ad2;
       edge.label1 = localLabel[code.ad1];
       edge.label2 = localLabel[code.ad2];
-      if (edge2Address.count(edge))
-        code = createTAC<TACMOV>(edge2Address[edge], code.ad3);
+      if (edge2Address.count(edge) && edge2Address[edge].second == localLabel[edge2Address[edge].first])
+        code = createTAC<TACMOV>(edge2Address[edge].first, code.ad3);
       update(code.ad3);
+      edge2Address[edge] = std::make_pair(code.ad3, localLabel[code.ad3]);
     }
   }
 }
 void Block::addLabel() {
-  if(codes.front().op!=TACLABEL)codes.push_front(createTAC<TACLABEL>(thisLabel));
+  if (codes.front().op != TACLABEL)codes.push_front(createTAC<TACLABEL>(thisLabel));
 }
 void Block::removeLabel() {
-  while(codes.size()&&codes.front().op==TACLABEL)codes.pop_front();
+  while (codes.size() && codes.front().op == TACLABEL)codes.pop_front();
 }
 // all TACLABEL are deleted from block
 Blocks::Blocks(const TAClist &code, bool createCFG) {
@@ -120,7 +122,6 @@ Blocks::Blocks(const TAClist &code, bool createCFG) {
   if (createCFG) {
     for (auto block:blocks)
       block->initUEVarVarKill();
-    successor.resize(blocks.size());
     initEdges();
     genAllLiveOut();
   }
@@ -184,6 +185,10 @@ void Blocks::change2NewLabels() {
   }
 }
 void Blocks::initEdges() {
+  successor.clear();
+  predecessor.clear();
+  successor.resize(blocks.size());
+  predecessor.resize(blocks.size());
   // build CFG
   for (int i = 0; i < blocks.size(); i++) {
     auto code = *(blocks[i]->codes.rbegin());
@@ -227,7 +232,4 @@ TAClist Blocks::getTAClist() {
 }
 std::shared_ptr<Block> Blocks::operator[](int index) {
   return blocks[index];
-}
-void BlockOptimizer::optimize(std::shared_ptr<Block>) {
-
 }

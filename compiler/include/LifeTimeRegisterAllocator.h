@@ -16,6 +16,7 @@
  */
 class LifeTimeRegisterAllocator : RegisterAllocator {
  public:
+  LifeTimeRegisterAllocator();
   LifeTimeRegisterAllocator(TAClist code);
   virtual Register putValue2NewRegister(address value, AssemblyCodes &assemblyCodes, bool write) override;
   virtual Register putAddress2NewRegister(address addr, AssemblyCodes &assemblyCodes) override;
@@ -41,12 +42,12 @@ class LifeTimeRegisterAllocator : RegisterAllocator {
   std::unordered_map<address, int> callerRegisters;  // begin of call -- end of call
   std::unordered_set<Register> unusedCallerRegisters; // remove dynamically resume at end of block
   std::unordered_set<Register> unusedCalleeRegisters; // remove dynamically resume at end of block
+  std::unordered_set<Register> calleeRegisterUsed; // begin of function -- end of function
   int charLocation; // begin of function -- end of function
   int spaceUsed; // begin of function -- end of function
   bool inFuntion; // begin of function -- end of function
   int argCnt; // begin of function -- end of function
-  int callArgCnt; // begin of function -- end of function
-  std::unordered_set<Register> calleeRegisterUsed; // begin of function -- end of function
+  int callArgCnt; // begin of call -- end of call
   address getStringName(address string);
   void enterFunction();
   void leaveFunction();
